@@ -1,0 +1,82 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1060 470" font-family="-apple-system, 'Segoe UI', Roboto, sans-serif" role="img" aria-label="Report card: an illustrative library split into verdict tiers — 48% already tagged, 31% verified, 9% likely, 7% covers, 5% unverified or no-match — so you can see how much of your library you can trust. All data shown is synthetic.">
+  <style>
+    :root{
+      --bg:#fbf8f5;--panel:#ffffff;--panel2:#f5ede6;--line:#e6dcd2;
+      --ink:#2b211c;--sub:#7a6a5e;
+      --rose:#b8546c;--green:#3f9068;--amber:#a9791f;--red:#c04f3c;--calm:#9a8f86;
+      --seg-line:#fbf8f5;
+    }
+    @media (prefers-color-scheme: dark){
+      :root{
+        --bg:#17130f;--panel:#221c17;--panel2:#2c241e;--line:#3a2f27;
+        --ink:#f0e9e2;--sub:#b3a498;
+        --rose:#dd8299;--green:#6bbf95;--amber:#d6a24a;--red:#e2735f;--calm:#a89d94;
+        --seg-line:#17130f;
+      }
+    }
+    .bg{fill:var(--bg);} .ink{fill:var(--ink);} .sub{fill:var(--sub);}
+    .h{font-family:Georgia,'Times New Roman',serif;fill:var(--ink);}
+    .mono{font-family:ui-monospace,'SF Mono',Menlo,monospace;}
+    .pct{fill:#fff;} .lbl-in{fill:#fff;}
+  </style>
+  <rect class="bg" x="0" y="0" width="1060" height="470" rx="20"/>
+
+  <text class="h" x="40" y="58" font-size="28" font-style="italic" font-weight="600">How much of your library can you trust?</text>
+  <text class="sub" x="40" y="84" font-size="14.5">Earditor sorts every file into a verdict tier — so the answer is a number, not a shrug.</text>
+
+  <!-- stacked bar: 48 / 31 / 9 / 7 / 5 across x=40..1020 (width 980) -->
+  <g>
+    <rect x="40"  y="130" width="470.4" height="92" fill="var(--calm)"  rx="0"/>
+    <rect x="510.4" y="130" width="303.8" height="92" fill="var(--green)"/>
+    <rect x="814.2" y="130" width="88.2"  height="92" fill="var(--rose)"/>
+    <rect x="902.4" y="130" width="68.6"  height="92" fill="var(--amber)"/>
+    <rect x="971.0" y="130" width="49.0"  height="92" fill="var(--red)"/>
+    <!-- rounded outer corners via a masked overlay: draw seams -->
+    <g stroke="var(--seg-line)" stroke-width="3">
+      <line x1="510.4" y1="130" x2="510.4" y2="222"/>
+      <line x1="814.2" y1="130" x2="814.2" y2="222"/>
+      <line x1="902.4" y1="130" x2="902.4" y2="222"/>
+      <line x1="971.0" y1="130" x2="971.0" y2="222"/>
+    </g>
+    <!-- rounded end caps -->
+    <path d="M40 130 h10 v92 h-10 a0 0 0 0 1 0 0 z" fill="none"/>
+    <rect x="40" y="130" width="980" height="92" rx="14" fill="none" stroke="var(--line)" stroke-width="1.5"/>
+
+    <!-- in-bar labels for the two wide segments -->
+    <text class="pct" x="60" y="172" font-size="30" font-weight="700">48%</text>
+    <text class="lbl-in mono" x="61" y="196" font-size="12" letter-spacing=".04em" opacity=".92">ALREADY TAGGED</text>
+    <text class="pct" x="530" y="172" font-size="30" font-weight="700">31%</text>
+    <text class="lbl-in mono" x="531" y="196" font-size="12" letter-spacing=".04em" opacity=".92">VERIFIED</text>
+  </g>
+
+  <!-- legend -->
+  <g font-size="13">
+    <g transform="translate(40,278)">
+      <circle cx="7" cy="6" r="6" fill="var(--calm)"/>
+      <text class="ink" x="22" y="11" font-weight="600">Already tagged · 48%</text>
+      <text class="sub" x="22" y="32" font-size="12">Retired by triage in ~1 min — no API calls, no fingerprinting.</text>
+    </g>
+    <g transform="translate(370,278)">
+      <circle cx="7" cy="6" r="6" fill="var(--green)"/>
+      <text class="ink" x="22" y="11" font-weight="600">Verified · 31%</text>
+      <text class="sub" x="22" y="32" font-size="12">Two fingerprints agree + duration checks. Batch-acceptable.</text>
+    </g>
+    <g transform="translate(700,278)">
+      <circle cx="7" cy="6" r="6" fill="var(--rose)"/>
+      <text class="ink" x="22" y="11" font-weight="600">Likely · 9%</text>
+      <text class="sub" x="22" y="32" font-size="12">Catalog + duration agree; reviewed one at a time.</text>
+    </g>
+    <g transform="translate(370,340)">
+      <circle cx="7" cy="6" r="6" fill="var(--amber)"/>
+      <text class="ink" x="22" y="11" font-weight="600">Covers · 7%</text>
+      <text class="sub" x="22" y="32" font-size="12">An uploader's cover — a first-class outcome, not a mislabel.</text>
+    </g>
+    <g transform="translate(700,340)">
+      <circle cx="7" cy="6" r="6" fill="var(--red)"/>
+      <text class="ink" x="22" y="11" font-weight="600">Unverified / no match · 5%</text>
+      <text class="sub" x="22" y="32" font-size="12">Nothing corroborates — the raw evidence is shown; you decide.</text>
+    </g>
+  </g>
+
+  <text class="sub" x="40" y="440" font-size="11.5" font-style="italic">Illustrative split. All data shown is synthetic.</text>
+</svg>

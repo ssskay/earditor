@@ -1,0 +1,5 @@
+# Extra dependencies for building the native macOS .app (on top of requirements.txt).
+#   pip install -r requirements.txt -r packaging/requirements-app.txt
+pywebview          # native window shell around the Flask review UI
+pyobjc             # macOS bindings pywebview uses for the Cocoa webview
+py2app             # bundles everything into Earditor.app

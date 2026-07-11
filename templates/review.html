@@ -1,0 +1,1112 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Earditor — Review</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400..600;1,9..144,400..600&family=Instrument+Sans:wght@400..600&family=JetBrains+Mono:wght@400..600&display=swap" rel="stylesheet">
+<style>
+/* Hallmark · macrostructure: Workbench (review tool) · tone: playful-refined / warm-editorial · anchor hue: dusty-rose ~6°
+ * pre-emit critique: P5 H4 E5 S5 R4 V5
+ * Fraunces (display) + Instrument Sans (UI) + JetBrains Mono (technical). OKLCH. Grain, not blobs.
+ */
+  :root {
+    color-scheme: light;
+    /* warm cream daylight — dusty-rose accent, one gold + three status hues */
+    --paper:    oklch(97.6% 0.009 62);   /* page ground */
+    --panel:    oklch(99.2% 0.004 70);   /* card */
+    --panel-2:  oklch(95.6% 0.013 52);   /* recessed / inputs */
+    --panel-3:  oklch(93.4% 0.016 46);   /* deeper recess */
+    --line:     oklch(90% 0.014 44);     /* hairline */
+    --line-2:   oklch(84% 0.02 34);      /* divider */
+    --ink:      oklch(31% 0.052 8);      /* primary text — deep plum-brown */
+    --ink-soft: oklch(46% 0.055 6);      /* secondary text */
+    --ink-mute: oklch(55% 0.045 12);     /* tertiary */
+    --placeholder: oklch(68% 0.035 24);  /* decorative only */
+
+    --rose:      oklch(57% 0.15 6);      /* accent */
+    --rose-deep: oklch(45% 0.135 8);     /* accent text / hover */
+    --rose-wash: oklch(95.5% 0.028 8);   /* accent tint */
+    --rose-line: oklch(85% 0.06 8);
+    --rose-glow: oklch(57% 0.15 6 / .16);
+
+    --ok:      oklch(50% 0.11 152);  --ok-wash:  oklch(95% 0.03 152); --ok-line:  oklch(85% 0.055 152);
+    --warn:    oklch(58% 0.10 72);   --warn-wash:oklch(95.5% 0.045 78);--warn-line:oklch(85% 0.075 78);
+    --bad:     oklch(53% 0.16 25);   --bad-wash: oklch(95.5% 0.035 18); --bad-line: oklch(86% 0.07 18);
+    --calm:    oklch(50% 0.022 58);  --calm-wash:oklch(94% 0.009 58);  --calm-line:oklch(89% 0.012 50);
+
+    --font-display: "Fraunces", "Hiragino Mincho ProN", Georgia, serif;
+    --font-ui: "Instrument Sans", -apple-system, BlinkMacSystemFont, "Hiragino Sans", "Segoe UI", Roboto, sans-serif;
+    --font-mono: "JetBrains Mono", ui-monospace, "SF Mono", Menlo, monospace;
+
+    --r-lg: 18px; --r-md: 12px; --r-sm: 8px; --r-xs: 6px; --r-pill: 999px;
+    --shadow-sm: 0 1px 2px oklch(31% 0.05 8 / .05);
+    --shadow: 0 1px 2px oklch(31% 0.05 8 / .04), 0 10px 24px oklch(31% 0.05 8 / .07);
+    --shadow-lift: 0 8px 18px oklch(31% 0.05 8 / .08), 0 18px 40px var(--rose-glow);
+
+    --ease-out: cubic-bezier(.2,.7,.3,1);
+    --ease-in-out: cubic-bezier(.65,0,.35,1);
+    --dur-fast: 120ms; --dur: 200ms; --dur-slow: 320ms;
+  }
+  * { box-sizing: border-box; }
+  html, body { overflow-x: clip; }
+  body {
+    margin: 0; color: var(--ink); background: var(--paper);
+    font-family: var(--font-ui); font-size: 15px; line-height: 1.55;
+    -webkit-font-smoothing: antialiased; text-rendering: optimizeLegibility;
+  }
+  /* Paper grain — tactile, low-contrast, replaces the gradient blobs */
+  body::before {
+    content: ""; position: fixed; inset: 0; pointer-events: none; z-index: 0;
+    opacity: .5; mix-blend-mode: multiply;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='.045'/%3E%3C/svg%3E");
+  }
+  body > * { position: relative; z-index: 1; }
+  a { color: var(--rose-deep); text-underline-offset: 2px; }
+
+  header {
+    position: sticky; top: 0; z-index: 20; backdrop-filter: blur(14px) saturate(1.2);
+    background: oklch(97.6% 0.009 62 / .82); border-bottom: 1px solid var(--line);
+    padding: 13px 24px; display: flex; align-items: center; gap: 18px; flex-wrap: wrap;
+  }
+  header h1 {
+    font-family: var(--font-display); font-optical-sizing: auto;
+    font-size: 22px; font-weight: 560; font-style: italic; letter-spacing: -.01em;
+    margin: 0; color: var(--ink); display: inline-flex; align-items: baseline; gap: 8px;
+  }
+  header h1 .dot { font-style: normal; color: var(--rose); font-size: 15px; letter-spacing: .04em; }
+  header h1 .sub { font-family: var(--font-ui); font-style: normal; font-weight: 500;
+    font-size: 12.5px; color: var(--ink-mute); letter-spacing: .01em; }
+  .tiers { display: flex; gap: 7px; flex-wrap: wrap; }
+  .tierpill {
+    font-family: var(--font-mono); font-size: 11px; letter-spacing: .02em;
+    padding: 4px 10px; border-radius: var(--r-sm); border: 1px solid var(--line);
+    background: var(--panel); color: var(--ink-soft); font-weight: 500;
+  }
+  .tierpill b { font-weight: 600; margin-left: 3px; color: var(--ink); }
+  .tp-UNVERIFIED b { color: var(--bad); }
+  .tp-COVER b { color: var(--warn); }
+  .tp-LIKELY b { color: var(--rose-deep); }
+  .tp-VERIFIED b { color: var(--ok); }
+  .skipped { font-size: 11.5px; color: var(--ink-mute); }
+  .spacer { flex: 1; }
+  /* Demo banner — makes it unmistakable that nothing here is real or written. */
+  .demo-pill {
+    font-family: var(--font-mono); font-size: 11px; letter-spacing: .01em; font-weight: 600;
+    padding: 4px 11px; border-radius: var(--r-pill); color: var(--rose-deep);
+    background: var(--rose-wash); border: 1px solid var(--rose-line); white-space: nowrap;
+  }
+  .demo-pill .di { font-style: normal; margin-right: 5px; }
+
+  .btn {
+    font-family: var(--font-ui); font-size: 13px; font-weight: 550; border: 1px solid var(--line-2);
+    background: var(--panel); color: var(--ink); padding: 8px 15px; border-radius: var(--r-sm);
+    cursor: pointer; transition: transform var(--dur-fast) var(--ease-out),
+      box-shadow var(--dur-fast) var(--ease-out), border-color var(--dur-fast), background var(--dur-fast), color var(--dur-fast);
+  }
+  .btn:hover { border-color: var(--rose); color: var(--rose-deep); transform: translateY(-1px); box-shadow: var(--shadow-sm); }
+  .btn:active { transform: translateY(0); }
+  .btn:focus-visible { outline: 2px solid var(--rose); outline-offset: 2px; }
+  .btn.ok { background: var(--rose); color: var(--panel); border-color: transparent;
+    box-shadow: 0 3px 10px var(--rose-glow); font-weight: 600; }
+  .btn.ok:hover { background: var(--rose-deep); color: var(--panel); }
+  .btn.ghost { background: transparent; color: var(--ink-soft); font-weight: 500; border-color: transparent; }
+  .btn.ghost:hover { color: var(--rose-deep); background: var(--rose-wash); }
+  .btn:disabled { opacity: .4; cursor: default; transform: none; box-shadow: none; }
+  .btn.scan { border-color: var(--rose-line); color: var(--rose-deep); background: var(--panel); }
+  .btn.scan:hover { background: var(--rose-wash); border-color: var(--rose); }
+
+  /* Scan-for-more progress indicator */
+  .scan-status { display: none; align-items: center; gap: 10px; font-size: 12px; color: var(--ink-mute); font-family: var(--font-mono); }
+  .scan-status.on { display: inline-flex; }
+  .scan-status .spin { width: 13px; height: 13px; border-radius: 50%;
+    border: 2px solid var(--rose-line); border-top-color: var(--rose); animation: spin .8s linear infinite; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .scan-bar { width: 120px; height: 5px; border-radius: var(--r-pill); background: var(--panel-3); overflow: hidden; }
+  .scan-bar > i { display: block; height: 100%; width: 0; border-radius: var(--r-pill);
+    background: var(--rose); transition: width var(--dur-slow) var(--ease-out); }
+  .scan-bar.indet > i { width: 40%; animation: indet 1.2s var(--ease-in-out) infinite; }
+  @keyframes indet { 0% { margin-left: -40%; } 100% { margin-left: 100%; } }
+
+  main { max-width: 1060px; margin: 0 auto; padding: 24px; }
+  .tier-head {
+    display: flex; align-items: center; gap: 10px; margin: 34px 0 14px;
+    font-family: var(--font-mono); font-size: 11px; text-transform: uppercase; letter-spacing: .14em; color: var(--ink-mute);
+  }
+  .tier-head .bar { height: 6px; width: 6px; border-radius: 50%; }
+  .tier-UNVERIFIED .bar { background: var(--bad); }
+  .tier-COVER .bar { background: var(--warn); }
+  .tier-LIKELY .bar { background: var(--rose); }
+  .tier-VERIFIED .bar { background: var(--ok); }
+  .tier-ALREADY_TAGGED .bar { background: var(--calm); }
+
+  .tagged-note { font-size: 12.5px; color: var(--ink-soft); background: var(--calm-wash);
+    border: 1px solid var(--calm-line); border-radius: var(--r-sm); padding: 8px 11px; margin: 6px 0 10px; }
+  .badge-official { font-family: var(--font-mono); font-size: 10px; letter-spacing: .02em; color: var(--ok); background: var(--ok-wash);
+    border: 1px solid var(--ok-line); border-radius: var(--r-xs); padding: 2px 7px; margin-left: 8px; white-space: nowrap; }
+
+  .card {
+    background: var(--panel); border: 1px solid var(--line); border-radius: var(--r-lg);
+    padding: 20px; margin-bottom: 16px; box-shadow: var(--shadow-sm);
+    display: grid; grid-template-columns: 120px minmax(0,1fr); gap: 20px; scroll-margin-top: 96px;
+    transition: box-shadow var(--dur) var(--ease-out), border-color var(--dur) var(--ease-out), transform var(--dur) var(--ease-out);
+  }
+  .card.active { border-color: var(--rose-line); box-shadow: var(--shadow-lift); }
+  .card.done { opacity: .4; transform: scale(.995); }
+  .art {
+    position: relative; width: 120px; height: 120px; border-radius: var(--r-md);
+    background: var(--panel-2); border: 1px solid var(--line);
+    display: flex; align-items: center; justify-content: center; color: var(--placeholder); font-size: 30px;
+    overflow: hidden; box-shadow: var(--shadow-sm);
+  }
+  .art .artimg { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+  .body { min-width: 0; }
+  .filename { font-size: 12px; color: var(--ink-mute); word-break: break-all; margin-bottom: 6px; font-family: var(--font-mono); line-height: 1.5; }
+  .folder { font-size: 12.5px; color: var(--ink-soft); margin-bottom: 12px; }
+  .folder b { color: var(--ink); font-weight: 600; }
+  .folder .ph2 { color: var(--placeholder); margin-left: 6px; font-size: 11.5px; }
+
+  .fields { display: grid; grid-template-columns: auto 1fr; gap: 7px 12px; align-items: center; margin-bottom: 8px; }
+  .fields label { font-family: var(--font-mono); font-size: 11px; color: var(--ink-mute); text-align: right; text-transform: uppercase; letter-spacing: .04em; }
+  .fields input {
+    font-family: var(--font-ui); font-size: 14px; background: var(--panel-2); border: 1px solid var(--line-2);
+    color: var(--ink); border-radius: var(--r-sm); padding: 8px 11px; width: 100%;
+    transition: border-color var(--dur-fast), background var(--dur-fast);
+  }
+  .fields input:focus { outline: none; border-color: var(--rose); background: var(--panel); box-shadow: 0 0 0 3px var(--rose-glow); }
+  .fields input::placeholder { color: var(--placeholder); }
+
+  /* Signal chips (S1–S6) */
+  .chips { display: flex; flex-wrap: wrap; gap: 6px; margin: 12px 0; }
+  .chip {
+    font-size: 11.5px; padding: 3px 9px 3px 7px; border-radius: var(--r-xs); border: 1px solid transparent;
+    display: inline-flex; align-items: center; gap: 6px; cursor: default;
+  }
+  .chip .sid { font-family: var(--font-mono); font-size: 10px; font-weight: 600; opacity: .85; }
+  .chip.green { background: var(--ok-wash); border-color: var(--ok-line); color: var(--ok); }
+  .chip.yellow { background: var(--warn-wash); border-color: var(--warn-line); color: var(--warn); }
+  .chip.red { background: var(--bad-wash); border-color: var(--bad-line); color: var(--bad); }
+  .chip.neutral { background: var(--calm-wash); border-color: var(--calm-line); color: var(--calm); }
+
+  .players { display: flex; gap: 16px; flex-wrap: wrap; margin: 14px 0 8px; }
+  .player { flex: 1; min-width: 240px; }
+  .player .plabel { font-family: var(--font-mono); font-size: 10px; color: var(--ink-mute); margin-bottom: 5px; text-transform: uppercase; letter-spacing: .08em; }
+  .plabel .hint { color: var(--placeholder); text-transform: none; letter-spacing: 0; }
+  audio { width: 100%; height: 34px; }
+  .noaudio { font-size: 12px; color: var(--placeholder); padding: 8px 0; }
+  .compare-hint { font-size: 11.5px; color: var(--ink-mute); margin: 4px 0 6px; line-height: 1.6; }
+  .compare-hint b { font-family: var(--font-mono); color: var(--ink); background: var(--panel-2); border: 1px solid var(--line);
+    border-radius: var(--r-xs); padding: 1px 5px; font-size: 10.5px; }
+
+  /* Candidate rows */
+  .candidates { margin: 10px 0; }
+  .candidates .clabel { font-size: 12px; color: var(--ink-mute); margin-bottom: 7px; }
+  .cand {
+    display: flex; align-items: center; gap: 11px; padding: 8px 11px; border: 1px solid var(--line);
+    border-radius: var(--r-md); margin-bottom: 6px; cursor: pointer; background: var(--panel-2);
+    transition: border-color var(--dur-fast) var(--ease-out), background var(--dur-fast), transform var(--dur-fast) var(--ease-out);
+  }
+  .cand:hover { border-color: var(--rose-line); transform: translateX(2px); }
+  .cand.sel { border-color: var(--rose); box-shadow: inset 0 0 0 1px var(--rose); background: var(--panel); }
+  .cand img { width: 40px; height: 40px; border-radius: var(--r-sm); object-fit: cover; background: var(--panel-3); flex: none; }
+  .cand .cmeta { min-width: 0; }
+  .cand .ct { font-size: 13px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .cand .cs { font-size: 11px; color: var(--ink-mute); }
+  .cand .src { font-family: var(--font-mono); font-size: 9.5px; letter-spacing: .02em; color: var(--ink-mute); border: 1px solid var(--line); border-radius: var(--r-xs); padding: 2px 6px; }
+  .cand .cprev { margin-left: auto; background: var(--panel); border: 1px solid var(--line); color: var(--ink-soft);
+    border-radius: var(--r-sm); cursor: pointer; font-size: 14px; padding: 4px 9px; line-height: 1; flex: none; }
+  .cand .cprev:hover { border-color: var(--rose); color: var(--rose-deep); }
+
+  .actions { display: flex; gap: 8px; margin-top: 14px; flex-wrap: wrap; align-items: center; }
+  .conflict-note { font-size: 12.5px; color: var(--ink); background: var(--bad-wash);
+    border: 1px solid var(--bad-line); border-radius: var(--r-md); padding: 9px 12px; margin: 8px 0; line-height: 1.55; }
+  .conflict-note b { color: var(--bad); }
+
+  /* Source-agreement row (§2) */
+  .srcrow { display: flex; flex-wrap: wrap; gap: 7px; margin: 10px 0 4px; }
+  .srcchip { font-size: 11.5px; padding: 4px 10px; border-radius: var(--r-sm); border: 1px solid var(--line);
+    background: var(--panel-2); display: inline-flex; align-items: baseline; gap: 7px; max-width: 100%; }
+  .srcchip .sname { font-family: var(--font-mono); font-size: 9.5px; text-transform: uppercase; letter-spacing: .06em; font-weight: 600; }
+  .srcchip .sval { color: var(--ink-soft); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 340px; }
+  .srcchip::before { content: ""; width: 6px; height: 6px; border-radius: 50%; align-self: center; flex: none; }
+  .srcchip.green::before { background: var(--ok); } .srcchip.green .sname { color: var(--ok); }
+  .srcchip.red::before { background: var(--bad); } .srcchip.red .sname { color: var(--bad); }
+  .srcchip.amber::before { background: var(--warn); } .srcchip.amber .sname { color: var(--warn); }
+  .srcchip.gray::before { background: var(--placeholder); } .srcchip.gray .sname { color: var(--ink-mute); }
+  .src-explain { font-size: 11.5px; color: var(--ink-mute); margin: 3px 0 4px; line-height: 1.5; }
+
+  /* The question + the four scenario options (§1) */
+  .q { font-family: var(--font-display); font-optical-sizing: auto; font-size: 16px; font-weight: 500; color: var(--ink-soft); margin: 14px 0 8px; }
+  .q b { color: var(--ink); font-weight: 600; }
+  .options { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 10px; margin: 10px 0 4px; }
+  .opt {
+    position: relative; text-align: left; border: 1px solid var(--line); background: var(--panel);
+    border-radius: var(--r-md); padding: 12px 13px 13px; cursor: pointer; font-family: var(--font-ui); color: var(--ink);
+    box-shadow: var(--shadow-sm);
+    transition: border-color var(--dur-fast) var(--ease-out), box-shadow var(--dur-fast) var(--ease-out),
+      background var(--dur-fast), transform var(--dur-fast) var(--ease-out);
+  }
+  .opt:hover { border-color: var(--rose-line); transform: translateY(-2px); box-shadow: var(--shadow); }
+  .opt:active { transform: translateY(0); box-shadow: var(--shadow-sm); }
+  .opt:focus-visible { outline: 2px solid var(--rose); outline-offset: 2px; }
+  .opt.suggested { border-color: var(--rose); background:
+      linear-gradient(var(--panel), var(--panel)) padding-box,
+      var(--rose-wash); box-shadow: 0 0 0 1px var(--rose), var(--shadow); }
+  .opt.suggested::after { content: "suggested"; position: absolute; top: -8px; left: 12px;
+    font-family: var(--font-mono); font-size: 9px; text-transform: uppercase; letter-spacing: .08em;
+    color: var(--panel); background: var(--rose); padding: 2px 7px; border-radius: var(--r-pill); }
+  .opt.sel { border-color: var(--rose); box-shadow: inset 0 0 0 2px var(--rose), var(--shadow); }
+  .opt .ohead { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; }
+  .opt .okey { font-family: var(--font-mono); font-size: 11px; font-weight: 600; color: var(--rose-deep);
+    background: var(--rose-wash); border: 1px solid var(--rose-line); border-radius: var(--r-xs);
+    width: 20px; height: 20px; display: inline-flex; align-items: center; justify-content: center; flex: none; }
+  .opt .olabel { font-family: var(--font-display); font-optical-sizing: auto; font-size: 14.5px; font-weight: 560; letter-spacing: -.005em; }
+  .opt .osug { display: none; }  /* replaced by the ::after ribbon */
+  .opt .otag { font-size: 12px; color: var(--ink-mute); display: flex; gap: 8px; line-height: 1.55; }
+  .opt .otag .ok { font-family: var(--font-mono); font-size: 9.5px; text-transform: uppercase; letter-spacing: .04em;
+    color: var(--placeholder); min-width: 52px; display: inline-block; padding-top: 2px; flex: none; }
+  .opt .otag .ov { color: var(--ink); word-break: break-word; }
+  .opt .otag .ov.blank { color: var(--placeholder); font-style: italic; }
+  .opt .onote { font-size: 11px; color: var(--warn); margin-top: 6px; padding-top: 6px; border-top: 1px dashed var(--warn-line); }
+  .opt .onote.rej { color: var(--bad); border-top-color: var(--bad-line); }
+  .opt.role-cover.suggested { border-color: var(--warn); box-shadow: 0 0 0 1px var(--warn), var(--shadow); background: var(--warn-wash); }
+  .opt.role-cover.suggested::after { background: var(--warn); }
+  .opt-skip { border-style: dashed; background: transparent; box-shadow: none; color: var(--ink-mute);
+    display: flex; flex-direction: column; justify-content: center; }
+  .opt-skip:hover { border-color: var(--ink-mute); background: var(--panel-2); }
+  .opt-skip .olabel { color: var(--ink-soft); }
+
+  .fieldswrap { display: none; margin: 12px 0 4px; padding: 14px; background: var(--panel-2); border: 1px solid var(--line); border-radius: var(--r-md); }
+  .card.editing .fieldswrap, .card.needfields .fieldswrap { display: block; }
+  .card.editing .fields input { background: var(--panel); border-color: var(--rose-line); }
+  .edit-actions { display: none; gap: 8px; margin-top: 10px; }
+  .card.editing .edit-actions { display: flex; }
+
+  .empty { text-align: center; color: var(--ink-mute); padding: 90px 20px; font-size: 15px; }
+  .empty code { font-family: var(--font-mono); background: var(--panel-2); border: 1px solid var(--line); border-radius: var(--r-xs); padding: 1px 6px; }
+  .empty .btn { margin-top: 20px; }
+
+  .toast {
+    position: fixed; bottom: 22px; left: 50%; transform: translateX(-50%) translateY(8px);
+    background: var(--ink); color: var(--panel); padding: 11px 18px; border-radius: var(--r-md);
+    box-shadow: var(--shadow-lift); font-size: 13px; opacity: 0;
+    transition: opacity var(--dur) var(--ease-out), transform var(--dur) var(--ease-out); pointer-events: none; z-index: 50;
+  }
+  .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+  .toast-undo { font-family: var(--font-ui); font-size: 12px; font-weight: 600; margin-left: 14px;
+    background: var(--rose); color: var(--panel); border: none; border-radius: var(--r-sm); padding: 5px 13px; cursor: pointer; }
+  .toast-undo:hover { background: var(--rose-deep); }
+
+  /* Undo history drawer */
+  .recent-panel {
+    position: fixed; top: 0; right: 0; bottom: 0; width: 420px; max-width: 92vw; z-index: 60;
+    background: var(--panel); border-left: 1px solid var(--line); box-shadow: -8px 0 40px oklch(31% 0.05 8 / .12);
+    transform: translateX(100%); transition: transform var(--dur-slow) var(--ease-in-out); display: flex; flex-direction: column;
+  }
+  .recent-panel.open { transform: translateX(0); }
+  .rp-head { display: flex; align-items: center; justify-content: space-between;
+    padding: 16px 18px; border-bottom: 1px solid var(--line); color: var(--ink); font-family: var(--font-display); font-weight: 560; }
+  .rp-list { overflow-y: auto; padding: 8px 12px; }
+  .rp-row { display: flex; align-items: center; gap: 11px; padding: 10px 8px;
+    border-bottom: 1px solid var(--line); font-size: 13px; }
+  .rp-row:last-child { border-bottom: none; }
+  .rp-meta { min-width: 0; flex: 1; }
+  .rp-meta b { color: var(--ink); }
+  .rp-alb { color: var(--ink-mute); font-size: 11.5px; }
+  .rp-sub { font-family: var(--font-mono); font-size: 10.5px; color: var(--ink-mute); margin-top: 2px; }
+  .rp-empty { color: var(--ink-mute); padding: 24px; text-align: center; }
+
+  kbd { font-family: var(--font-mono); background: var(--panel-2); border: 1px solid var(--line); border-bottom-width: 2px;
+        border-radius: var(--r-xs); padding: 1px 6px; font-size: 10.5px; color: var(--ink-soft); }
+  .help { font-size: 11.5px; color: var(--ink-mute); line-height: 1.9; }
+  .help kbd { margin: 0 1px; }
+
+  @media (max-width: 620px) {
+    header { padding: 12px 16px; gap: 12px; }
+    .help { display: none; }
+    main { padding: 16px; }
+    .card { grid-template-columns: 1fr; gap: 14px; padding: 16px; }
+    .art { width: 88px; height: 88px; }
+    .options { grid-template-columns: 1fr; }
+    .players { gap: 12px; }
+    .srcchip .sval { max-width: 220px; }
+    .q { font-size: 15px; }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    * { animation-duration: .001ms !important; animation-iteration-count: 1 !important;
+        transition-duration: .001ms !important; scroll-behavior: auto !important; }
+  }
+</style>
+</head>
+<body>
+<header>
+  <h1><span class="dot">♪˖°</span> Earditor <span class="sub">— review</span></h1>
+  {% if demo %}<span class="demo-pill" title="Synthetic sample library — no real files, no tags written, no Music.app"><span class="di">◆</span>demo — synthetic data, nothing is written</span>{% endif %}
+  <div class="tiers" id="tiers"></div>
+  <span class="skipped" id="skipped"></span>
+  <div class="spacer"></div>
+  <span class="help">
+    <kbd>1</kbd> matched · <kbd>2</kbd> cover · <kbd>3</kbd> original · <kbd>4</kbd> skip · <kbd>E</kbd> edit · <kbd>Space</kbd> play · <kbd>X</kbd> cue · <kbd>[</kbd><kbd>]</kbd> nudge · <kbd>U</kbd> undo · <kbd>Y</kbd> YouTube · <kbd>←</kbd><kbd>→</kbd> move
+  </span>
+  <span class="scan-status" id="scanStatus">
+    <span class="spin"></span>
+    <div class="scan-bar indet" id="scanBar"><i></i></div>
+    <span id="scanText">Scanning…</span>
+  </span>
+  <button class="btn ghost" id="recentBtn" onclick="toggleRecent()" title="Recently handled — undo any of them">↩ Recent</button>
+  <button class="btn ghost" id="refreshBtn" onclick="load()" title="Reload the queue — drops anything you've accepted or skipped">⟲ Refresh</button>
+  {% if not demo %}<button class="btn scan" id="scanBtn" onclick="startScan()">⟳ Scan for more</button>{% endif %}
+  <button class="btn ok" id="batchBtn" style="display:none"></button>
+</header>
+
+<main id="main">
+  <div class="empty" id="loading">Loading review queue…</div>
+</main>
+
+<div class="recent-panel" id="recentPanel">
+  <div class="rp-head">
+    <b>↩ Recently handled</b>
+    <button class="btn ghost" onclick="toggleRecent()">✕</button>
+  </div>
+  <div class="rp-list" id="recentList"></div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const $ = (s, r=document) => r.querySelector(s);
+const enc = encodeURIComponent;
+const esc = s => (s||"").replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+let CARDS = [];      // flat list of {el, data} for keyboard nav
+let ACTIVE = -1;
+let VERIFIED = [];   // filepaths currently in the VERIFIED tier
+let SCANNING = false;  // a background scan.py job is running
+let SCAN_POLL = null;  // interval id while polling scan status
+let LAST_ACTION = null;  // filepath of the last accept/cover/skip, for U = undo
+// Album templates stamped on album-less covers/originals so they read as fully
+// tagged and don't loop back into the queue on the next scan. From config.json.
+const COVER_ALBUM_TEMPLATE = {{ cover_album_template|tojson }};
+const ORIGINAL_ALBUM_TEMPLATE = {{ original_album_template|tojson }};
+const STAMP_COVER_GROUPING = {{ stamp_cover_grouping|tojson }};
+// Demo mode (python3 review.py --demo): synthetic fixtures, nothing written to
+// disk or Music.app, no local audio. Every visible string is fictional.
+const DEMO = {{ demo|tojson }};
+
+// toast(msg) — plain. toast(msg, filepath) — adds an Undo button for that track.
+function toast(msg, undoFp) {
+  const t = $("#toast");
+  t.innerHTML = "";
+  t.appendChild(document.createTextNode(msg));
+  if (undoFp) {
+    const b = document.createElement("button");
+    b.className = "toast-undo";
+    b.textContent = "Undo";
+    b.onclick = () => { t.classList.remove("show"); undoAction(undoFp); };
+    t.appendChild(b);
+  }
+  t.style.pointerEvents = undoFp ? "auto" : "none";
+  t.classList.add("show");
+  clearTimeout(t._t);
+  t._t = setTimeout(() => t.classList.remove("show"), undoFp ? 7000 : 1800);
+}
+
+// Undo: put a handled track back in the queue so it can be corrected.
+async function undoAction(fp) {
+  const r = await post("/api/undo", { filepath: fp });
+  if (!r.ok) { toast("Nothing to undo"); return; }
+  if (LAST_ACTION === fp) LAST_ACTION = null;
+  toast("Undone — back in the queue");
+  load();
+}
+
+function undoLast() {
+  if (!LAST_ACTION) { toast("Nothing to undo"); return; }
+  undoAction(LAST_ACTION);
+}
+
+/* ---- Undo history drawer ---- */
+async function toggleRecent() {
+  const p = $("#recentPanel");
+  if (p.classList.toggle("open")) await loadRecent();
+}
+
+async function loadRecent() {
+  const list = $("#recentList");
+  list.innerHTML = `<div class="rp-empty">Loading…</div>`;
+  let d;
+  try { d = await (await fetch("/api/recent?limit=25")).json(); }
+  catch(_) { list.innerHTML = `<div class="rp-empty">Couldn't load.</div>`; return; }
+  if (!d.items.length) {
+    list.innerHTML = `<div class="rp-empty">Nothing handled yet.</div>`;
+    return;
+  }
+  list.innerHTML = "";
+  for (const it of d.items) {
+    const t = it.tags || {};
+    const row = document.createElement("div");
+    row.className = "rp-row";
+    const label = it.status === "skipped"
+      ? `<b>${esc(it.display_name || it.filepath)}</b>`
+      : `<b>${esc(t.artist || "?")}</b> — ${esc(t.title || "?")}` +
+        (t.album ? `<br><span class="rp-alb">${esc(t.album)}</span>` : "");
+    row.innerHTML = `<div class="rp-meta">${label}
+      <div class="rp-sub">${esc(it.status)}${it.at ? " · " + esc(it.at.replace("T", " ")) : ""}</div></div>`;
+    const b = document.createElement("button");
+    b.className = "btn ghost";
+    b.textContent = "Undo";
+    b.onclick = async () => { await undoAction(it.filepath); loadRecent(); };
+    row.appendChild(b);
+    list.appendChild(row);
+  }
+}
+
+async function load() {
+  const r = await fetch("/api/queue");
+  const data = await r.json();
+  render(data);
+}
+
+const TIER_LABEL = { ALREADY_TAGGED: "TAGGED" };
+const tierLabel = v => TIER_LABEL[v] || v;
+
+function tierPills(counts) {
+  const order = ["UNVERIFIED","COVER","LIKELY","VERIFIED"];
+  return order.map(v => `<span class="tierpill tp-${v}">${tierLabel(v)} <b>${counts[v]||0}</b></span>`).join("");
+}
+
+function chip(s) {
+  return `<span class="chip ${s.status}" title="${esc(s.explain)}">
+    <span class="sid">${s.id}</span>${esc(s.label)}</span>`;
+}
+
+function candRow(c, fp, idx) {
+  const art = c.art_url ? `<img src="${esc(c.art_url)}" loading="lazy">` : `<img>`;
+  return `<div class="cand" data-fp="${esc(fp)}" data-idx="${idx}"
+      data-title="${esc(c.title)}" data-artist="${esc(c.artist)}" data-album="${esc(c.album||'')}"
+      data-art="${esc(c.art_url||'')}" data-preview="${esc(c.preview_url||'')}">
+    ${art}
+    <div class="cmeta">
+      <div class="ct">${esc(c.title)||'—'}</div>
+      <div class="cs">${esc(c.artist)||'—'}${c.album ? ' · '+esc(c.album) : ''}</div>
+    </div>
+    <button class="cprev" title="Listen to this candidate (iTunes preview)">🔊</button>
+    <span class="src">${esc(c.source)}</span>
+  </div>`;
+}
+
+// --- scenario options (§1) -----------------------------------------------------
+function albumFromTemplate(tpl, artist) {
+  if (!tpl || !artist) return "";
+  return tpl.split("{artist}").join(artist);
+}
+function hasCoverSignal(item) {
+  return !!(item.signals && item.signals.S5 && item.signals.S5.pass);
+}
+
+// Build the four (+optional AcoustID) scenario options with their EXACT final tags.
+function buildOptions(item) {
+  const o = item.options || {};
+  const folder = item.folder_name || "";
+  const m = o.matched || {}, cov = o.cover || {}, orig = o.original || {};
+  const grp = (STAMP_COVER_GROUPING && hasCoverSignal(item)) ? "Cover" : "";
+
+  const opt1 = { key:"matched", role:"matched", hot:"1", label:"Matched artist",
+    suggested: o.suggested === "matched", albumSource: m.album_source,
+    note: m.itunes_rejected ? "iTunes had the wrong song — album/art from Shazam" : "",
+    noteClass: m.itunes_rejected ? "rej" : "",
+    tags: { title:m.title||"", artist:m.artist||"", album:m.album||"",
+            art_url:m.art_url||"", grouping:grp } };
+
+  const cAlbum = albumFromTemplate(COVER_ALBUM_TEMPLATE, cov.artist || folder);
+  const opt2 = { key:"cover", role:"cover", hot:"2", label:"Cover by uploader",
+    suggested: o.suggested === "cover",
+    tags: { title:cov.title||"", artist:cov.artist||folder||"", album:cAlbum,
+            art_url:"", grouping:"" } };
+
+  const oAlbum = albumFromTemplate(ORIGINAL_ALBUM_TEMPLATE, orig.artist || folder);
+  const opt3 = { key:"original", role:"original", hot:"3", label:"Uploader's own song",
+    suggested:false,
+    tags: { title:orig.title||"", artist:orig.artist||folder||"", album:oAlbum,
+            art_url:"", grouping:"" } };
+
+  const list = [opt1, opt2, opt3];
+  if (o.acoustid_alt) {
+    const alt = o.acoustid_alt;
+    list.push({ key:"alt", role:"matched", hot:"", label:`It's ${alt.artist||'AcoustID'}`,
+      suggested:false, note:"AcoustID's reading", noteClass:"",
+      tags:{ title:alt.title||m.title||"", artist:alt.artist||"", album:alt.album||"",
+             art_url:"", grouping:grp } });
+  }
+  return list;
+}
+
+function optTagLine(k, v, blank) {
+  const has = v && String(v).trim();
+  return `<div class="otag"><span class="ok">${k}</span>
+    <span class="ov ${has?'':'blank'}">${has ? esc(v) : (blank||'—')}</span></div>`;
+}
+function optCard(opt) {
+  const t = opt.tags;
+  const sug = opt.suggested ? `<span class="osug">Suggested</span>` : "";
+  const hot = opt.hot ? `<kbd class="okey">${opt.hot}</kbd>` : "";
+  // Art line: matched keeps the source's cover; cover/original never borrow it (§5).
+  const artLine = (opt.role === "matched")
+    ? optTagLine("Art", t.art_url ? (opt.albumSource === "iTunes" ? "iTunes cover" : "Shazam cover") : "", "— (none)")
+    : `<div class="otag"><span class="ok">Art</span><span class="ov blank">— keeps file's own</span></div>`;
+  const grpLine = t.grouping ? optTagLine("Grouping", t.grouping) : "";
+  const note = opt.note ? `<div class="onote ${opt.noteClass||''}">${esc(opt.note)}</div>` : "";
+  return `<button class="opt role-${opt.role} ${opt.suggested?'suggested':''}" data-key="${opt.key}" type="button">
+    <div class="ohead">${hot}<span class="olabel">${esc(opt.label)}</span>${sug}</div>
+    ${optTagLine("Title", t.title, "—")}
+    ${optTagLine("Artist", t.artist, "—")}
+    ${optTagLine("Album", t.album, "— (blank)")}
+    ${artLine}${grpLine}${note}
+  </button>`;
+}
+
+// --- source-agreement row (§2) -------------------------------------------------
+function srcChip(name, src, cls) {
+  if (!src) return `<span class="srcchip gray"><span class="sname">${name}</span><span class="sval">no match</span></span>`;
+  const val = (esc(src.title)||"—") + (src.artist ? " — " + esc(src.artist) : "");
+  return `<span class="srcchip ${cls}"><span class="sname">${name}</span><span class="sval">${val}</span></span>`;
+}
+function sourceRow(item) {
+  const o = item.options || {}, m = o.matched || {};
+  const sh = item.shazam, ac = item.acoustid, it = item.itunes;
+  const shCls = sh ? "green" : "gray";
+  const acCls = !ac ? "gray" : (o.acoustid_alt ? "red" : "green");   // amber-vs-red: red = named a different artist
+  const itCls = !it ? "gray" : (m.itunes_rejected ? "amber" : "green");  // amber = returned a different song
+  const chips = srcChip("Shazam", sh, shCls) + srcChip("AcoustID", ac, acCls) + srcChip("iTunes", it, itCls);
+  let ex = "";
+  const s1 = (item.signals || {}).S1;
+  if (s1 && s1.status === "red") ex = s1.explain;
+  else if (m.itunes_rejected) ex = "iTunes returned a different song — its album/art were dropped from “Matched artist”.";
+  return `<div class="srcrow">${chips}</div>` + (ex ? `<div class="src-explain">${esc(ex)}</div>` : "");
+}
+
+function card(item) {
+  const p = item.proposed || {};
+  const fp = item.filepath;
+  const isUnverified = item.verdict === "UNVERIFIED";
+  const hasOptions = !!item.options;
+  const signals = item.signals ? Object.values(item.signals) : [];
+  const folder = item.folder_name || "";
+
+  const conflictNote = (p.source === "iTunes (folder artist)")
+    ? `<div class="conflict-note">⚠ Two versions of this song exist. The fingerprint said
+        <b>${esc(p.original_artist || "someone else")}</b>, but <b>${esc(folder || "the folder artist")}</b>
+        has their own release. <b>Listen to both</b>, and pick the other candidate if it's wrong.</div>` : "";
+  const taggedNote = (item.verdict === "ALREADY_TAGGED")
+    ? `<div class="tagged-note">✓ This file already had complete tags (below). Not fingerprinted — verify the fields and Accept to keep, edit if wrong, or Skip.</div>` : "";
+
+  // Candidates stay available for UNVERIFIED / folder-conflict so an alternate
+  // reading is one click into the edit fields.
+  const isConflict = p.source === "iTunes (folder artist)";
+  const candHtml = ((isUnverified || isConflict) && (item.candidates||[]).length)
+    ? `<div class="candidates"><div class="clabel">Other readings — click to edit from one:</div>
+        ${item.candidates.map((c,i)=>candRow(c,fp,i)).join("")}</div>` : "";
+
+  const opts = hasOptions ? buildOptions(item) : [];
+  const preview = (opts[0] && opts[0].tags.preview_url) || p.preview_url || "";
+  const optionsHtml = hasOptions
+    ? `<div class="options">${opts.map(optCard).join("")}
+        <button class="opt opt-skip" data-key="skip" type="button">
+          <div class="ohead"><kbd class="okey">4</kbd><span class="olabel">Skip</span></div>
+          <div class="otag"><span class="ov blank">Decide later — writes nothing.</span></div>
+        </button></div>`
+    : "";   // ALREADY_TAGGED / no-signal rows fall back to the edit fields + Accept below
+
+  const localAudio = DEMO
+    ? `<div class="player"><div class="plabel">▶ Local file</div>
+        <div class="noaudio">disabled in demo — no real audio files</div></div>`
+    : `<div class="player"><div class="plabel">▶ Local file <span class="hint">(Space to play)</span></div>
+      <audio controls preload="none" class="local" src="/api/audio?path=${enc(fp)}"></audio></div>`;
+  const previewAudio = preview
+    ? `<div class="player"><div class="plabel">▶ iTunes preview</div>
+        <audio controls preload="none" class="preview" src="${esc(preview)}"></audio></div>`
+    : `<div class="player"><div class="plabel">▶ iTunes preview</div><div class="noaudio">no preview available</div></div>`;
+
+  const el = document.createElement("div");
+  el.className = "card tier-" + item.verdict + (hasOptions ? "" : " needfields");
+  el.dataset.fp = fp;
+  el.dataset.verdict = item.verdict;
+  el.dataset.folder = folder;
+  el._opts = opts;
+  const m0 = (item.options || {}).matched || {};
+  const sh = item.shazam || {};
+  el.dataset.candTitle = m0.title || p.title || sh.title || "";
+  el.dataset.candArtist = m0.artist || p.artist || sh.artist || "";
+  // Card thumbnail: the matched art → else the file's embedded thumbnail → else ♪.
+  const artSrc = m0.art_url || p.art_url ? esc(m0.art_url || p.art_url) : `/api/art?path=${enc(fp)}`;
+
+  el.innerHTML = `
+    <div>
+      <div class="art"><span class="ph">♪</span><img class="artimg" src="${artSrc}" loading="lazy"
+        onerror="this.remove()"></div>
+    </div>
+    <div class="body">
+      <div class="filename">${esc(item.display_name || fp)}
+        ${item.official_hint ? '<span class="badge-official">Topic · likely official</span>' : ''}</div>
+      <div class="folder">📁 <b>${folder ? esc(folder) : "— no artist folder —"}</b>
+        <span class="ph2">artist folder (often the uploader)</span></div>
+      ${taggedNote}
+      ${hasOptions ? sourceRow(item) : ""}
+      ${conflictNote}
+      <div class="q">${hasOptions ? "<b>What is this recording?</b> Pressing a button writes exactly its tags." : ""}</div>
+      ${optionsHtml}
+      <div class="fieldswrap">
+        <div class="fields">
+          <label>Title</label><input class="f-title" value="${esc(p.title||'')}" placeholder="title…">
+          <label>Artist</label><input class="f-artist" value="${esc(p.artist||'')}" placeholder="artist…">
+          <label>Album</label><input class="f-album" value="${esc(p.album||'')}" placeholder="album (blank ok)…">
+        </div>
+        <div class="edit-actions">
+          <button class="btn ok act-save">✓ Save <kbd>⏎</kbd></button>
+          <button class="btn ghost act-cancel">Cancel <kbd>Esc</kbd></button>
+        </div>
+      </div>
+      <div class="chips">${signals.map(chip).join("")}</div>
+      ${candHtml}
+      <div class="players">${localAudio}${previewAudio}</div>
+      <div class="compare-hint">⇄ <b>X</b> cues the local file to the preview zone · <b>[</b> <b>]</b> nudge ±5s to line them up
+        ${hasOptions ? "· <b>E</b> edit the highlighted option" : ""}</div>
+      <div class="actions">
+        ${hasOptions ? "" : '<button class="btn ok act-accept">✓ Accept <kbd>A</kbd></button>'}
+        ${hasOptions ? '<button class="btn ghost act-edit">✎ Edit <kbd>E</kbd></button>' : ''}
+        <button class="btn ghost act-skip">Skip <kbd>${hasOptions ? '4' : 'S'}</kbd></button>
+        <button class="btn ghost act-yt">▶ Copy + YouTube <kbd>Y</kbd></button>
+        <button class="btn ghost act-cue">⇄ Cue to preview <kbd>X</kbd></button>
+      </div>
+    </div>`;
+
+  // wire scenario option buttons
+  el.querySelectorAll(".opt").forEach(btn => {
+    btn.addEventListener("click", () => onOption(el, btn.dataset.key));
+  });
+  // wire candidates → load into edit fields
+  el.querySelectorAll(".cand").forEach(cd => {
+    cd.addEventListener("click", (e) => {
+      if (e.target.classList.contains("cprev")) return;
+      pickCandidate(el, cd);
+    });
+    const pb = cd.querySelector(".cprev");
+    if (pb) pb.addEventListener("click", (e) => { e.stopPropagation(); previewCandidate(cd, pb); });
+  });
+  const acc = el.querySelector(".act-accept");
+  if (acc) acc.addEventListener("click", () => saveEdit(el, true));  // no-options fallback
+  const ed = el.querySelector(".act-edit");
+  if (ed) ed.addEventListener("click", () => editHighlighted(el));
+  el.querySelector(".act-save").addEventListener("click", () => saveEdit(el));
+  el.querySelector(".act-cancel").addEventListener("click", () => cancelEdit(el));
+  el.querySelector(".act-skip").addEventListener("click", () => skip(el));
+  el.querySelector(".act-yt").addEventListener("click", () => youtube(el));
+  el.querySelector(".act-cue").addEventListener("click", () => cueToPreview(el));
+  el.addEventListener("mousedown", () => setActiveByEl(el));
+
+  // Pre-select the suggested option (or matched) so Edit/YouTube have a basis.
+  const initial = opts.find(o => o.suggested) || opts[0];
+  if (initial) { el._curOpt = initial; fillFields(el, initial.tags); markSel(el, initial.key); }
+  else el._curOpt = { key:"tagged", role:"matched", tags:{ title:p.title||"", artist:p.artist||"", album:p.album||"", art_url:p.art_url||"", grouping:"" } };
+  return el;
+}
+
+function render(data) {
+  const main = $("#main");
+  main.innerHTML = "";
+  CARDS = []; VERIFIED = [];
+  $("#tiers").innerHTML = tierPills(data.tier_counts);
+  const nTagged = (data.status_counts || {}).tagged || 0;
+  $("#skipped").innerHTML = nTagged ? `✓ ${nTagged} already clean-tagged, skipped` : "";
+
+  if (!data.groups.length) {
+    main.innerHTML = `<div class="empty">🎉 Queue is empty — nothing left to review.<br>
+      Scan your library for new rips to add to the queue.
+      <br><button class="btn scan" onclick="startScan()" ${SCANNING ? "disabled" : ""}>⟳ Scan for more</button></div>`;
+    $("#batchBtn").style.display = "none";
+    return;
+  }
+
+  for (const g of data.groups) {
+    const head = document.createElement("div");
+    head.className = "tier-head tier-" + g.verdict;
+    head.innerHTML = `<span class="bar"></span>${tierLabel(g.verdict)} · ${g.items.length}`;
+    main.appendChild(head);
+    for (const item of g.items) {
+      const el = card(item);
+      main.appendChild(el);
+      CARDS.push({ el, data: item });
+      if (item.verdict === "VERIFIED") VERIFIED.push(el);
+    }
+  }
+
+  const bb = $("#batchBtn");
+  if (VERIFIED.length) {
+    bb.style.display = "";
+    bb.textContent = `Accept all ${VERIFIED.length} verified`;
+    bb.onclick = batchAccept;
+  } else bb.style.display = "none";
+
+  if (CARDS.length) setActive(0);
+}
+
+async function post(url, body) {
+  const r = await fetch(url, { method: "POST", headers: {"Content-Type":"application/json"}, body: JSON.stringify(body) });
+  return r.json();
+}
+
+function fillFields(el, tags) {
+  el.querySelector(".f-title").value = tags.title || "";
+  el.querySelector(".f-artist").value = tags.artist || "";
+  el.querySelector(".f-album").value = tags.album || "";
+  el.dataset.candTitle = tags.title || el.dataset.candTitle || "";
+  el.dataset.candArtist = tags.artist || "";
+}
+function markSel(el, key) {
+  el.querySelectorAll(".opt").forEach(b => b.classList.toggle("sel", key != null && b.dataset.key === key));
+}
+function fieldTags(el) {
+  const cur = el._curOpt || { tags: {} };
+  return {
+    title: el.querySelector(".f-title").value.trim(),
+    artist: el.querySelector(".f-artist").value.trim(),
+    album: el.querySelector(".f-album").value.trim(),
+    art_url: cur.tags.art_url || "",       // art/grouping carry from the chosen option
+    grouping: cur.tags.grouping || "",
+  };
+}
+
+// Pressing an option button writes exactly the tags its preview shows (§1). In edit
+// mode it only re-loads that option's fields (Save commits) so tweaks aren't lost.
+function onOption(el, key) {
+  if (key === "skip") { skip(el); return; }
+  const opt = (el._opts || []).find(o => o.key === key);
+  if (!opt) return;
+  el._curOpt = opt;
+  fillFields(el, opt.tags);
+  markSel(el, key);
+  if (el.classList.contains("editing")) return;
+  acceptTags(el, { ...opt.tags });
+}
+
+function pickCandidate(el, cd) {
+  const tags = { title: cd.dataset.title, artist: cd.dataset.artist, album: cd.dataset.album || "",
+                 art_url: cd.dataset.art || "", grouping: "" };
+  el._curOpt = { key: "cand", role: "matched", tags };
+  fillFields(el, tags);
+  markSel(el, null);
+  editHighlighted(el, /*keepFields=*/true);
+  // AcoustID/MusicBrainz candidates carry no art — resolve iTunes art for the pick.
+  if (!cd.dataset.art) resolveCandArt(cd).then(a => { if (a) el._curOpt.tags.art_url = a; });
+  const pv = el.querySelector(".preview");
+  if (cd.dataset.preview && pv) pv.src = cd.dataset.preview;
+}
+
+function editHighlighted(el, keepFields) {
+  if (!el._curOpt) el._curOpt = (el._opts || [])[0] || { tags: {} };
+  if (!keepFields) fillFields(el, el._curOpt.tags);
+  el.classList.add("editing");
+  const tf = el.querySelector(".f-title");
+  if (tf) { tf.focus(); tf.select(); }
+}
+function cancelEdit(el) {
+  el.classList.remove("editing");
+  if (document.activeElement) document.activeElement.blur();
+}
+
+// saveEdit commits the (possibly edited) field values. `fallback` = a no-options
+// ALREADY_TAGGED card where the Accept button is the only write path.
+async function saveEdit(el, fallback) {
+  const tags = fieldTags(el);
+  if (!tags.title) { toast("Title required"); el.querySelector(".f-title").focus(); return; }
+  el.classList.remove("editing");
+  acceptTags(el, tags);
+}
+
+async function acceptTags(el, tags) {
+  if (!tags.title) { toast("Title required"); editHighlighted(el); return; }
+  el.classList.add("done");
+  const res = await post("/api/accept", { filepath: el.dataset.fp, tags });
+  if (res.ok) {
+    LAST_ACTION = el.dataset.fp;
+    const extra = tags.grouping ? ` [${tags.grouping}]` : "";
+    const demoNote = res.demo ? " · demo: nothing written" : "";
+    toast(`Accepted: ${tags.artist} — ${tags.title}${extra}${demoNote}`, el.dataset.fp);
+    advanceFrom(el);
+  } else {
+    el.classList.remove("done");
+    toast("Accept failed (see terminal)");
+  }
+}
+
+async function skip(el) {
+  el.classList.add("done");
+  await post("/api/skip", { filepath: el.dataset.fp });
+  LAST_ACTION = el.dataset.fp;
+  toast("Skipped", el.dataset.fp);
+  advanceFrom(el);
+}
+
+async function batchAccept() {
+  // Batch-accept writes the "Matched artist" (option 1) tags for each verified card.
+  const tracks = VERIFIED.filter(el => !el.classList.contains("done"))
+    .map(el => {
+      const o = (el._opts || []).find(x => x.key === "matched");
+      return { filepath: el.dataset.fp, tags: o ? { ...o.tags } : fieldTags(el) };
+    })
+    .filter(t => t.tags.title);
+  if (!tracks.length) return;
+  $("#batchBtn").disabled = true;
+  const res = await post("/api/batch_accept", { tracks });
+  VERIFIED.forEach(el => el.classList.add("done"));
+  toast(`Batch accepted ${res.accepted} verified track(s)`);
+  $("#batchBtn").disabled = false;
+  setTimeout(load, 900);
+}
+
+/* keyboard nav */
+function setActive(i) {
+  if (ACTIVE >= 0 && CARDS[ACTIVE]) CARDS[ACTIVE].el.classList.remove("active");
+  ACTIVE = Math.max(0, Math.min(i, CARDS.length - 1));
+  const c = CARDS[ACTIVE];
+  if (c) { c.el.classList.add("active"); c.el.scrollIntoView({ behavior: "smooth", block: "center" }); }
+}
+function setActiveByEl(el) {
+  const idx = CARDS.findIndex(c => c.el === el);
+  if (idx >= 0) setActive(idx);
+}
+function advanceFrom(el) {
+  const idx = CARDS.findIndex(c => c.el === el);
+  let n = idx + 1;
+  while (n < CARDS.length && CARDS[n].el.classList.contains("done")) n++;
+  if (n < CARDS.length) setActive(n);
+}
+
+/* audio: play/pause the active card's local file; single shared preview player */
+const PREVIEW = new Audio();
+function stopPreview() { try { PREVIEW.pause(); } catch(_){} }
+
+function toggleLocal(el) {
+  const a = el.querySelector("audio.local");
+  if (!a) return;
+  // pause every other audio first
+  document.querySelectorAll("audio").forEach(x => { if (x !== a) x.pause(); });
+  stopPreview();
+  if (a.paused) {
+    a.play().catch(() => toast("Can't play this file (format or moved)"));
+  } else a.pause();
+}
+
+// iTunes previews start mid-song (Apple picks a highlight ~30% in) and the API
+// doesn't expose the offset — so cue the local file to ~30% as a starting guess,
+// then let the user nudge with [ ] to line the two up by ear.
+function cueToPreview(el) {
+  const local = el.querySelector("audio.local");
+  if (!local) return;
+  const seek = () => {
+    const d = local.duration;
+    if (d && isFinite(d)) local.currentTime = d * 0.30;
+    document.querySelectorAll("audio").forEach(a => { if (a !== local) a.pause(); });
+    stopPreview();
+    local.play().catch(() => toast("Can't play this file"));
+    toast("Local cued to ~30% (preview zone) — [ ] to nudge, 🔊 to A/B the preview");
+  };
+  if (local.readyState >= 1) seek();
+  else { local.addEventListener("loadedmetadata", seek, { once: true }); local.load(); }
+}
+
+function nudgeLocal(el, delta) {
+  const local = el.querySelector("audio.local");
+  if (!local) return;
+  const apply = () => {
+    local.currentTime = Math.max(0, (local.currentTime || 0) + delta);
+    if (local.paused) local.play().catch(() => {});
+    toast((delta > 0 ? "+" : "") + delta + "s → " + Math.round(local.currentTime) + "s");
+  };
+  if (local.readyState >= 1) apply();
+  else { local.addEventListener("loadedmetadata", apply, { once: true }); local.load(); }
+}
+
+function ytQuery(el) {
+  // Title: what's typed/picked, else the candidate match, else the filename
+  // (which for YouTube rips is usually the original upload title).
+  const title = el.querySelector(".f-title").value.trim()
+    || el.dataset.candTitle
+    || (el.querySelector(".filename").textContent || "").trim();
+  // Artist: what's typed/picked, else the candidate match's artist. Including it
+  // makes cover uploads identifiable by uploader in the YouTube results.
+  const artist = el.querySelector(".f-artist").value.trim() || el.dataset.candArtist || "";
+  if (!title) return "";
+  return artist ? title + " " + artist : title;
+}
+
+async function youtube(el) {
+  const q = ytQuery(el);
+  if (!q) { toast("Nothing to search"); return; }
+  try { await navigator.clipboard.writeText(q); } catch(_) {}
+  window.open("https://www.youtube.com/results?search_query=" + enc(q), "_blank");
+  toast("Copied + opened YouTube: " + q);
+}
+
+// One iTunes lookup per candidate (preview + art), cached on its dataset.
+async function fetchCandItunes(cd) {
+  if (cd.dataset.itFetched) {
+    return { preview: cd.dataset.preview || "", art: cd.dataset.art || "" };
+  }
+  let preview = "", art = "";
+  try {
+    const r = await fetch(`/api/preview?artist=${enc(cd.dataset.artist)}&title=${enc(cd.dataset.title)}`);
+    const d = await r.json();
+    preview = d.preview_url || "";
+    art = d.art_url || "";
+  } catch(_) {}
+  cd.dataset.itFetched = "1";
+  if (preview) cd.dataset.preview = preview;
+  if (art) {
+    cd.dataset.art = art;
+    const img = cd.querySelector("img");
+    if (img && !img.src) img.src = art;
+  }
+  return { preview: cd.dataset.preview || "", art: cd.dataset.art || "" };
+}
+
+// Art for a candidate: its own if present, else resolved from iTunes.
+async function resolveCandArt(cd) {
+  return cd.dataset.art || (await fetchCandItunes(cd)).art;
+}
+
+async function previewCandidate(cd, btn) {
+  let url = cd.dataset.preview;
+  if (!url && !cd.dataset.itFetched) {
+    btn.textContent = "…";
+    url = (await fetchCandItunes(cd)).preview;
+    btn.textContent = "🔊";
+    // If this candidate is the selected one, capture the art we just found.
+    const cardEl = cd.closest(".card");
+    if (cardEl && cd.classList.contains("sel") && cd.dataset.art) cardEl._art = cd.dataset.art;
+  }
+  if (!url) { toast("No iTunes preview found for this candidate"); return; }
+  document.querySelectorAll("audio").forEach(x => x.pause());
+  if (PREVIEW.src === url && !PREVIEW.paused) { PREVIEW.pause(); return; }
+  PREVIEW.src = url;
+  PREVIEW.play().catch(() => toast("Preview failed to play"));
+}
+
+/* ---- Scan for more: run scan.py as a background job from the UI ---- */
+async function startScan() {
+  if (SCANNING) { toast("A scan is already running"); return; }
+  setScanning(true);
+  const res = await post("/api/scan/start", {});
+  if (!res.ok && res.error !== "already_running") {
+    setScanning(false);
+    toast("Couldn't start scan (see terminal)");
+    return;
+  }
+  toast("Scanning your library for new tracks…");
+  beginScanPolling();
+}
+
+function setScanning(on) {
+  SCANNING = on;
+  $("#scanStatus").classList.toggle("on", on);
+  document.querySelectorAll("#scanBtn, .empty .btn.scan").forEach(b => b.disabled = on);
+  const sb = $("#scanBtn");
+  if (sb) sb.textContent = on ? "Scanning…" : "⟳ Scan for more";   // absent in --demo
+}
+
+function beginScanPolling() {
+  if (SCAN_POLL) clearInterval(SCAN_POLL);
+  SCAN_POLL = setInterval(pollScan, 1500);
+  pollScan();
+}
+
+function updateHeaderCounts(tier_counts, status_counts) {
+  if (tier_counts) $("#tiers").innerHTML = tierPills(tier_counts);
+  const nTagged = (status_counts || {}).tagged || 0;
+  $("#skipped").innerHTML = nTagged ? `✓ ${nTagged} already clean-tagged, skipped` : "";
+}
+
+function updateScanProgress(s) {
+  const bar = $("#scanBar"), fill = bar.querySelector("i"), txt = $("#scanText");
+  if (s.total > 0) {
+    bar.classList.remove("indet");
+    fill.style.width = Math.min(100, Math.round(s.done / s.total * 100)) + "%";
+    // Progress is NEW CARDS, not the raw file backlog — most files are already
+    // clean-tagged and get skipped without ever producing a card.
+    const files = s.scanned ? ` · ${s.scanned} files checked` : "";
+    txt.textContent = `Scanning… ${s.done}/${s.total} new cards${files}`;
+  } else {
+    bar.classList.add("indet");
+    fill.style.width = "";
+    txt.textContent = "Scanning…";
+  }
+}
+
+async function pollScan() {
+  let s;
+  try { s = await (await fetch("/api/scan/status")).json(); }
+  catch (_) { return; }               // transient error — keep polling
+  updateHeaderCounts(s.tier_counts, s.status_counts);  // live pills, no card churn
+  updateScanProgress(s);
+  if (!s.running) {
+    clearInterval(SCAN_POLL); SCAN_POLL = null;
+    setScanning(false);
+    toast(s.error ? "Scan ended: " + s.error : "Scan complete — queue updated");
+    load();                            // full refresh to pull in new cards
+  }
+}
+
+// If the page is (re)loaded while a scan is already running, resume the indicator.
+async function resumeScanIfRunning() {
+  try {
+    const s = await (await fetch("/api/scan/status")).json();
+    if (s.running) { setScanning(true); beginScanPolling(); }
+  } catch (_) {}
+}
+
+// Option hotkey map (§1): 1–4, keeping A→1, C→2, O→3, S→4 for muscle memory.
+const OPTION_KEY = { "1":"matched", "a":"matched", "2":"cover", "c":"cover",
+                     "3":"original", "o":"original", "4":"skip", "s":"skip" };
+
+document.addEventListener("keydown", (e) => {
+  // Never hijack OS/browser shortcuts: Cmd/Ctrl+C (copy), Cmd+V, etc.
+  if (e.metaKey || e.ctrlKey || e.altKey) return;
+  const c = CARDS[ACTIVE]; if (!c) return;
+  const typing = ["INPUT","TEXTAREA"].includes(document.activeElement.tagName);
+  // While editing fields: Enter saves, Escape cancels; let everything else type.
+  if (typing) {
+    if (e.key === "Enter") { e.preventDefault(); saveEdit(c.el); }
+    else if (e.key === "Escape") { e.preventDefault(); cancelEdit(c.el); }
+    return;
+  }
+  // Space / P toggles the local file (Space would otherwise scroll)
+  if (e.key === " " || e.key.toLowerCase() === "p") { e.preventDefault(); toggleLocal(c.el); return; }
+  const k = e.key.toLowerCase();
+  if (k in OPTION_KEY) {
+    e.preventDefault();
+    // No-options fallback card (ALREADY_TAGGED): 1/A accepts fields, S/4 skips.
+    if (!(c.el._opts && c.el._opts.length)) {
+      if (OPTION_KEY[k] === "skip") skip(c.el); else saveEdit(c.el, true);
+    } else onOption(c.el, OPTION_KEY[k]);
+    return;
+  }
+  switch (k) {
+    case "e": e.preventDefault(); editHighlighted(c.el); break;
+    case "y": e.preventDefault(); youtube(c.el); break;
+    case "u": e.preventDefault(); undoLast(); break;
+    case "x": e.preventDefault(); cueToPreview(c.el); break;
+    case "[": e.preventDefault(); nudgeLocal(c.el, -5); break;
+    case "]": e.preventDefault(); nudgeLocal(c.el, 5); break;
+    case "arrowright": case "j": e.preventDefault(); setActive(ACTIVE+1); break;
+    case "arrowleft": e.preventDefault(); setActive(ACTIVE-1); break;
+    case "escape": if (document.activeElement) document.activeElement.blur(); break;
+  }
+});
+
+load();
+resumeScanIfRunning();
+</script>
+</body>
+</html>

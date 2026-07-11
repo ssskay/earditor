@@ -1,0 +1,40 @@
+# --- Local state & data (never commit) ---
+earditor.db
+earditor.db-wal
+earditor.db-shm
+shazamer.db
+shazamer.db-wal
+shazamer.db-shm
+demo.db
+demo.db-wal
+demo.db-shm
+logs/
+legacy_accepted.csv
+
+# --- Per-machine config (holds your library path) ---
+# Copy config.example.json → config.json and edit it. The real config is local-only.
+config.json
+
+# --- macOS .app build artifacts (packaging/) ---
+build/
+dist/
+*.app
+*.egg-info/
+
+# --- Tooling / OS noise ---
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.DS_Store
+.fuse_hidden*
+.cx/
+.claude/
+.venv/
+venv/
+
+# internal handoff prompt (not for the public repo)
+RENAME_HANDOFF.md
+LAUNCH_HANDOFF.md
+
+# working docs with real library data (not for the public repo)
+private/

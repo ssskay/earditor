@@ -1,0 +1,141 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1060 560" font-family="-apple-system, 'Segoe UI', Roboto, sans-serif" role="img" aria-label="Anatomy of a review card for a synthetic track 'Aigata': a source-agreement row shows Shazam (green), AcoustID naming a different artist (red), and iTunes (no match); four always-present option buttons each preview the exact tags they will write; the verdict pre-highlights one; a one-click button resolves the AcoustID disagreement. All data shown is synthetic.">
+  <style>
+    :root{
+      --bg:#fbf8f5;--panel:#ffffff;--panel2:#f5ede6;--line:#e6dcd2;--line2:#d8ccc0;
+      --ink:#2b211c;--sub:#7a6a5e;--mut:#9a8a7c;
+      --rose:#b8546c;--rosew:#f7e6ea;--rosel:#e6b9c4;
+      --green:#3f9068;--greenw:#e5f1ea;--greenl:#b8ddc9;
+      --amber:#a9791f;--amberw:#f3ead6;
+      --red:#c04f3c;--redw:#f6e2dc;--redl:#e6b9ad;
+      --calm:#9a8f86;--calmw:#efe9e3;
+    }
+    @media (prefers-color-scheme: dark){
+      :root{
+        --bg:#17130f;--panel:#221c17;--panel2:#2c241e;--line:#3a2f27;--line2:#4a3d33;
+        --ink:#f0e9e2;--sub:#b3a498;--mut:#8f8278;
+        --rose:#dd8299;--rosew:#3a2028;--rosel:#6b3d49;
+        --green:#6bbf95;--greenw:#183226;--greenl:#2f5a44;
+        --amber:#d6a24a;--amberw:#33280f;
+        --red:#e2735f;--redw:#3a201a;--redl:#6b382c;
+        --calm:#a89d94;--calmw:#2a221c;
+      }
+    }
+    .bg{fill:var(--bg);} .ink{fill:var(--ink);} .sub{fill:var(--sub);} .mut{fill:var(--mut);}
+    .h{font-family:Georgia,'Times New Roman',serif;fill:var(--ink);}
+    .mono{font-family:ui-monospace,'SF Mono',Menlo,monospace;}
+    .callout{fill:var(--sub);} .cnum{font-family:ui-monospace,'SF Mono',Menlo,monospace;font-weight:700;}
+    .leader{stroke:var(--rosel);stroke-width:1.5;fill:none;stroke-dasharray:4 3;}
+  </style>
+  <rect class="bg" x="0" y="0" width="1060" height="560" rx="20"/>
+  <text class="h" x="40" y="52" font-size="26" font-style="italic" font-weight="600">The review card — “what is this recording?”</text>
+
+  <!-- ================= the card ================= -->
+  <rect class="mono" x="40" y="78" width="620" height="452" rx="18" fill="var(--panel)" stroke="var(--rosel)" stroke-width="1.5"/>
+
+  <!-- art thumb -->
+  <rect x="64" y="104" width="76" height="76" rx="12" fill="var(--rose)" opacity=".85"/>
+  <text x="102" y="156" font-size="34" text-anchor="middle" fill="#fff" font-family="Georgia,serif">♪</text>
+
+  <text class="mono mut" x="160" y="118" font-size="13">Aigata.mp3</text>
+  <text class="sub" x="160" y="140" font-size="13">📁 <tspan class="ink" font-weight="700" font-family="-apple-system,sans-serif">Yuzuki Ame</tspan> <tspan class="mut" font-size="11">artist folder (often the uploader)</tspan></text>
+
+  <!-- source-agreement row (compact: each witness's ARTIST — the disagreement is the point) -->
+  <g font-size="12">
+    <rect x="160" y="152" width="150" height="30" rx="8" fill="var(--greenw)" stroke="var(--greenl)"/>
+    <circle cx="176" cy="167" r="4" fill="var(--green)"/>
+    <text class="mono" x="188" y="171" font-size="9.5" font-weight="700" fill="var(--green)">SHAZAM</text>
+    <text class="ink" x="234" y="171">Yuzuki Ame</text>
+
+    <rect x="318" y="152" width="166" height="30" rx="8" fill="var(--redw)" stroke="var(--redl)"/>
+    <circle cx="334" cy="167" r="4" fill="var(--red)"/>
+    <text class="mono" x="346" y="171" font-size="9.5" font-weight="700" fill="var(--red)">ACOUSTID</text>
+    <text class="ink" x="398" y="171">Mochizuki Rei</text>
+
+    <rect x="492" y="152" width="128" height="30" rx="8" fill="var(--calmw)" stroke="var(--line2)"/>
+    <circle cx="508" cy="167" r="4" fill="var(--calm)"/>
+    <text class="mono" x="520" y="171" font-size="9.5" font-weight="700" fill="var(--mut)">ITUNES</text>
+    <text class="mut" x="562" y="171">no match</text>
+  </g>
+  <text class="sub" x="64" y="206" font-size="12">AcoustID disagrees — it heard “Aigata — Mochizuki Rei”.</text>
+
+  <text class="h" x="64" y="234" font-size="15" font-weight="600">What is this recording? <tspan class="sub" font-family="-apple-system,sans-serif" font-size="12.5" font-style="normal" font-weight="400">Pressing a button writes exactly its tags.</tspan></text>
+
+  <!-- option 1: Matched (suggested) -->
+  <rect x="64" y="248" width="278" height="128" rx="12" fill="var(--rosew)" stroke="var(--rose)" stroke-width="1.6"/>
+  <rect x="80" y="240" width="70" height="16" rx="8" fill="var(--rose)"/>
+  <text class="mono" x="115" y="252" font-size="8.5" fill="#fff" text-anchor="middle" letter-spacing=".06em">SUGGESTED</text>
+  <text x="80" y="278" font-size="12" class="mono" font-weight="700" fill="var(--rose)">1</text>
+  <text class="h" x="98" y="279" font-size="14" font-weight="600">Matched artist</text>
+  <g font-size="12">
+    <text class="mono mut" x="80" y="302" font-size="9.5">TITLE</text><text class="ink" x="150" y="302">Aigata</text>
+    <text class="mono mut" x="80" y="322" font-size="9.5">ARTIST</text><text class="ink" x="150" y="322">Yuzuki Ame</text>
+    <text class="mono mut" x="80" y="342" font-size="9.5">ALBUM</text><text class="ink" x="150" y="342">Reverie</text>
+    <text class="mono mut" x="80" y="362" font-size="9.5">ART</text><text class="ink" x="150" y="362">Shazam cover</text>
+  </g>
+
+  <!-- option 2: Cover -->
+  <rect x="358" y="248" width="278" height="128" rx="12" fill="var(--panel2)" stroke="var(--line)"/>
+  <text x="374" y="278" font-size="12" class="mono" font-weight="700" fill="var(--rose)">2</text>
+  <text class="h" x="392" y="279" font-size="14" font-weight="600">Cover by uploader</text>
+  <g font-size="12">
+    <text class="mono mut" x="374" y="302" font-size="9.5">TITLE</text><text class="ink" x="444" y="302">Aigata</text>
+    <text class="mono mut" x="374" y="322" font-size="9.5">ARTIST</text><text class="ink" x="444" y="322">Yuzuki Ame</text>
+    <text class="mono mut" x="374" y="342" font-size="9.5">ALBUM</text><text class="ink" x="444" y="342">Yuzuki Ame (Covers)</text>
+    <text class="mono mut" x="374" y="362" font-size="9.5">ART</text><text class="mut" x="444" y="362" font-style="italic">— keeps file's own</text>
+  </g>
+
+  <!-- option 3: acoustid alt -->
+  <rect x="64" y="392" width="278" height="82" rx="12" fill="var(--panel2)" stroke="var(--line)"/>
+  <text class="h" x="80" y="418" font-size="14" font-weight="600">It's Mochizuki Rei</text>
+  <g font-size="12">
+    <text class="mono mut" x="80" y="440" font-size="9.5">ARTIST</text><text class="ink" x="150" y="440">Mochizuki Rei</text>
+    <text class="sub" x="80" y="462" font-size="11">AcoustID's reading — one click</text>
+  </g>
+  <!-- option 4: skip -->
+  <rect x="358" y="392" width="278" height="82" rx="12" fill="none" stroke="var(--line2)" stroke-dasharray="5 4"/>
+  <text x="374" y="424" font-size="12" class="mono" font-weight="700" fill="var(--rose)">4</text>
+  <text class="h" x="392" y="425" font-size="14" font-weight="600" fill="var(--sub)">Skip</text>
+  <text class="sub" x="374" y="448" font-size="12" font-style="italic">Decide later — writes nothing.</text>
+
+  <!-- signal chips row -->
+  <g font-size="10" font-family="ui-monospace,Menlo,monospace">
+    <rect x="64" y="490" width="70" height="22" rx="6" fill="var(--redw)" stroke="var(--redl)"/><text x="74" y="505" fill="var(--red)">S1 fp</text>
+    <rect x="140" y="490" width="78" height="22" rx="6" fill="var(--greenw)" stroke="var(--greenl)"/><text x="150" y="505" fill="var(--green)">S3 dur</text>
+    <rect x="224" y="490" width="86" height="22" rx="6" fill="var(--amberw)" stroke="none"/><text x="234" y="505" fill="var(--amber)">S4 filename</text>
+    <rect x="316" y="490" width="78" height="22" rx="6" fill="var(--greenw)" stroke="var(--greenl)"/><text x="326" y="505" fill="var(--green)">S6 folder</text>
+    <text class="mut" x="404" y="505" font-family="-apple-system,sans-serif">S1–S6 evidence chips</text>
+  </g>
+
+  <!-- ================= callouts ================= -->
+  <!-- (1) source row -->
+  <path class="leader" d="M620 167 C 700 167, 700 120, 720 120"/>
+  <text class="cnum" x="726" y="112" font-size="13" fill="var(--rose)">1</text>
+  <text class="h" x="742" y="112" font-size="14" font-weight="600">Source-agreement row</text>
+  <text class="callout" x="726" y="134" font-size="12.5">What each witness returned, colour-coded</text>
+  <text class="callout" x="726" y="152" font-size="12.5">green agrees · amber different song · red</text>
+  <text class="callout" x="726" y="170" font-size="12.5">different artist · grey no result.</text>
+
+  <!-- (2) suggested -->
+  <path class="leader" d="M150 244 C 690 210, 700 250, 720 250"/>
+  <text class="cnum" x="726" y="242" font-size="13" fill="var(--rose)">2</text>
+  <text class="h" x="742" y="242" font-size="14" font-weight="600">Pre-highlight</text>
+  <text class="callout" x="726" y="264" font-size="12.5">The verdict suggests one option — but</text>
+  <text class="callout" x="726" y="282" font-size="12.5">never changes what any button does.</text>
+
+  <!-- (3) exact tags -->
+  <path class="leader" d="M342 330 C 690 340, 700 350, 720 350"/>
+  <text class="cnum" x="726" y="342" font-size="13" fill="var(--rose)">3</text>
+  <text class="h" x="742" y="342" font-size="14" font-weight="600">Exact-tags preview</text>
+  <text class="callout" x="726" y="364" font-size="12.5">Every button shows the precise Title ·</text>
+  <text class="callout" x="726" y="382" font-size="12.5">Artist · Album · Art it will write — no</text>
+  <text class="callout" x="726" y="400" font-size="12.5">hidden transforms.</text>
+
+  <!-- (4) alt -->
+  <path class="leader" d="M342 433 C 690 433, 700 440, 720 440"/>
+  <text class="cnum" x="726" y="432" font-size="13" fill="var(--rose)">4</text>
+  <text class="h" x="742" y="432" font-size="14" font-weight="600">One-click resolver</text>
+  <text class="callout" x="726" y="454" font-size="12.5">When AcoustID names a different artist,</text>
+  <text class="callout" x="726" y="472" font-size="12.5">“It's {artist}” settles it in one press.</text>
+
+  <text class="mut" x="726" y="512" font-size="11.5" font-style="italic">All data shown is synthetic.</text>
+</svg>

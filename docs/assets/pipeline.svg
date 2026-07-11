@@ -1,0 +1,105 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1060 500" font-family="-apple-system, 'Segoe UI', Roboto, sans-serif" role="img" aria-label="Earditor pipeline: one audio file is examined by three independent witnesses (Shazam, AcoustID + MusicBrainz, iTunes) plus the file's own evidence; six signals S1 to S6 are scored deterministically; the result is a verdict tier. All data shown is synthetic.">
+  <style>
+    :root{
+      --bg:#fbf8f5;--panel:#ffffff;--panel2:#f5ede6;--line:#e6dcd2;
+      --ink:#2b211c;--sub:#7a6a5e;--mono:#8a7a6c;
+      --rose:#b8546c;--green:#3f9068;--amber:#a9791f;--red:#c04f3c;--calm:#8a8079;
+    }
+    @media (prefers-color-scheme: dark){
+      :root{
+        --bg:#17130f;--panel:#221c17;--panel2:#2c241e;--line:#3a2f27;
+        --ink:#f0e9e2;--sub:#b3a498;--mono:#a2917f;
+        --rose:#dd8299;--green:#6bbf95;--amber:#d6a24a;--red:#e2735f;--calm:#a89d94;
+      }
+    }
+    .bg{fill:var(--bg);} .panel{fill:var(--panel);stroke:var(--line);}
+    .panel2{fill:var(--panel2);stroke:var(--line);}
+    .ink{fill:var(--ink);} .sub{fill:var(--sub);} .mono{fill:var(--mono);font-family:ui-monospace,'SF Mono',Menlo,monospace;}
+    .h{font-family:Georgia,'Times New Roman',serif;fill:var(--ink);}
+    .flow{stroke:var(--line);stroke-width:2;fill:none;}
+    .lbl{font-family:ui-monospace,'SF Mono',Menlo,monospace;fill:var(--sub);letter-spacing:.08em;}
+  </style>
+  <rect class="bg" x="0" y="0" width="1060" height="500" rx="20"/>
+
+  <!-- title -->
+  <text class="h" x="40" y="52" font-size="27" font-style="italic" font-weight="600">How verification works</text>
+  <text class="sub" x="40" y="76" font-size="14.5">Evidence is gathered independently, scored deterministically, and turned into a verdict — never a guess.</text>
+
+  <!-- Stage 1: the file -->
+  <g>
+    <rect class="panel" x="40" y="150" width="150" height="150" rx="16" stroke-width="1.5"/>
+    <text class="h" x="115" y="212" font-size="46" text-anchor="middle" fill="var(--rose)">♪</text>
+    <text class="mono" x="115" y="242" font-size="11.5" text-anchor="middle">track.mp3</text>
+    <text class="sub" x="115" y="332" font-size="11.5" text-anchor="middle">the file's own testimony:</text>
+    <text class="sub" x="115" y="349" font-size="11.5" text-anchor="middle">filename · folder · duration</text>
+  </g>
+
+  <!-- flow lines file -> witnesses -->
+  <path class="flow" d="M190 200 C 225 200, 225 128, 262 128"/>
+  <path class="flow" d="M190 210 C 225 210, 225 194, 262 194"/>
+  <path class="flow" d="M190 230 C 225 230, 225 260, 262 260"/>
+  <path class="flow" d="M190 250 C 225 250, 225 326, 262 326"/>
+
+  <!-- Stage 2: witnesses -->
+  <text class="lbl" x="262" y="112" font-size="10.5">FOUR INDEPENDENT WITNESSES</text>
+  <g>
+    <rect class="panel2" x="262" y="120" width="238" height="52" rx="12"/>
+    <circle cx="286" cy="146" r="6" fill="var(--rose)"/>
+    <text class="ink" x="304" y="142" font-size="14" font-weight="600">Shazam</text>
+    <text class="sub" x="304" y="160" font-size="11.5">acoustic fingerprint · title · artist · art</text>
+  </g>
+  <g>
+    <rect class="panel2" x="262" y="186" width="238" height="52" rx="12"/>
+    <circle cx="286" cy="212" r="6" fill="var(--green)"/>
+    <text class="ink" x="304" y="208" font-size="14" font-weight="600">AcoustID + MusicBrainz</text>
+    <text class="sub" x="304" y="226" font-size="11.5">a second, independent fingerprint</text>
+  </g>
+  <g>
+    <rect class="panel2" x="262" y="252" width="238" height="52" rx="12"/>
+    <circle cx="286" cy="278" r="6" fill="var(--amber)"/>
+    <text class="ink" x="304" y="274" font-size="14" font-weight="600">iTunes Search</text>
+    <text class="sub" x="304" y="292" font-size="11.5">catalog · album · art · 30s preview</text>
+  </g>
+  <g>
+    <rect class="panel2" x="262" y="318" width="238" height="52" rx="12"/>
+    <circle cx="286" cy="344" r="6" fill="var(--calm)"/>
+    <text class="ink" x="304" y="340" font-size="14" font-weight="600">File evidence</text>
+    <text class="sub" x="304" y="358" font-size="11.5">duration · folder = uploader · tokens</text>
+  </g>
+
+  <!-- flow witnesses -> signals -->
+  <path class="flow" d="M500 146 C 540 146, 540 210, 578 210"/>
+  <path class="flow" d="M500 212 C 540 212, 540 220, 578 220"/>
+  <path class="flow" d="M500 278 C 540 278, 540 232, 578 232"/>
+  <path class="flow" d="M500 344 C 540 344, 540 242, 578 242"/>
+
+  <!-- Stage 3: signals -->
+  <g>
+    <rect class="panel" x="578" y="150" width="212" height="200" rx="16" stroke-width="1.5"/>
+    <text class="lbl" x="598" y="180" font-size="10.5">SIX SIGNALS, SCORED</text>
+    <g font-size="12">
+      <text x="598" y="205"><tspan class="mono" font-size="10.5" font-weight="600">S1</tspan><tspan class="ink" dx="8">fingerprint agreement</tspan></text>
+      <text x="598" y="227"><tspan class="mono" font-size="10.5" font-weight="600">S2</tspan><tspan class="ink" dx="8">catalog confirmation</tspan></text>
+      <text x="598" y="249"><tspan class="mono" font-size="10.5" font-weight="600">S3</tspan><tspan class="ink" dx="8">duration sanity</tspan></text>
+      <text x="598" y="271"><tspan class="mono" font-size="10.5" font-weight="600">S4</tspan><tspan class="ink" dx="8">filename corroboration</tspan></text>
+      <text x="598" y="293"><tspan class="mono" font-size="10.5" font-weight="600">S5</tspan><tspan class="ink" dx="8">cover / remix indicators</tspan></text>
+      <text x="598" y="315"><tspan class="mono" font-size="10.5" font-weight="600">S6</tspan><tspan class="ink" dx="8">folder vs. artist</tspan></text>
+    </g>
+    <text class="sub" x="598" y="338" font-size="10.5" font-style="italic">pure functions — no LLM, no guessing</text>
+  </g>
+
+  <!-- flow signals -> verdicts -->
+  <path class="flow" d="M790 250 C 828 250, 828 250, 866 250"/>
+
+  <!-- Stage 4: verdict tiers -->
+  <text class="lbl" x="866" y="140" font-size="10.5">VERDICT TIER</text>
+  <g font-size="12.5" font-weight="600">
+    <g><rect class="panel2" x="866" y="150" width="154" height="34" rx="9"/><circle cx="888" cy="167" r="5" fill="var(--green)"/><text class="ink" x="902" y="171">VERIFIED</text></g>
+    <g><rect class="panel2" x="866" y="190" width="154" height="34" rx="9"/><circle cx="888" cy="207" r="5" fill="var(--rose)"/><text class="ink" x="902" y="211">LIKELY</text></g>
+    <g><rect class="panel2" x="866" y="230" width="154" height="34" rx="9"/><circle cx="888" cy="247" r="5" fill="var(--amber)"/><text class="ink" x="902" y="251">COVER</text></g>
+    <g><rect class="panel2" x="866" y="270" width="154" height="34" rx="9"/><circle cx="888" cy="287" r="5" fill="var(--red)"/><text class="ink" x="902" y="291">UNVERIFIED</text></g>
+    <g><rect class="panel2" x="866" y="310" width="154" height="34" rx="9"/><circle cx="888" cy="327" r="5" fill="var(--calm)"/><text class="ink" x="902" y="331">NO_MATCH</text></g>
+  </g>
+
+  <text class="sub" x="530" y="470" font-size="12" text-anchor="middle" font-style="italic">Proof, not guesses — every file lands in a tier, and the review queue shows the raw evidence for anything it couldn't prove.</text>
+</svg>

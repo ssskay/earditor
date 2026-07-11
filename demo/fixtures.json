@@ -1,0 +1,1357 @@
+{
+  "_comment": "All data here is synthetic. Fictional uploaders, songs, and artists were run through the real verify.py pipeline to produce authentic signal/verdict shapes with zero real-library data. Regenerate with: python3 demo/build_fixtures.py",
+  "rows": [
+    {
+      "filepath": "/demo/Yuzuki Ame - Topic/Astralis/Hoshizora Memory.m4a",
+      "verdict": "VERIFIED",
+      "folder_name": "Yuzuki Ame",
+      "display_name": "Hoshizora Memory.m4a",
+      "duration": 214,
+      "proposed": {
+        "title": "Hoshizora Memory",
+        "artist": "Yuzuki Ame",
+        "album": "Astralis",
+        "art_url": "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIzMDAiIGhlaWdodD0iMzAwIj48ZGVmcz48bGluZWFyR3JhZGllbnQgaWQ9ImciIHgxPSIwIiB5MT0iMCIgeDI9IjEiIHkyPSIxIj48c3RvcCBvZmZzZXQ9IjAiIHN0b3AtY29sb3I9ImhzbCgyMTIsNjIlLDU4JSkiLz48c3RvcCBvZmZzZXQ9IjEiIHN0b3AtY29sb3I9ImhzbCgyNTIsNTglLDM4JSkiLz48L2xpbmVhckdyYWRpZW50PjwvZGVmcz48cmVjdCB3aWR0aD0iMzAwIiBoZWlnaHQ9IjMwMCIgZmlsbD0idXJsKCNnKSIvPjx0ZXh0IHg9IjE1MCIgeT0iMTkyIiBmb250LXNpemU9IjE1MCIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZmlsbD0icmdiYSgyNTUsMjU1LDI1NSwuOTIpIiBmb250LWZhbWlseT0iR2VvcmdpYSxzZXJpZiI+4pmqPC90ZXh0Pjwvc3ZnPg==",
+        "preview_url": "",
+        "source": "iTunes"
+      },
+      "shazam": {
+        "title": "Hoshizora Memory",
+        "artist": "Yuzuki Ame",
+        "album": "Astralis",
+        "art_url": "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIzMDAiIGhlaWdodD0iMzAwIj48ZGVmcz48bGluZWFyR3JhZGllbnQgaWQ9ImciIHgxPSIwIiB5MT0iMCIgeDI9IjEiIHkyPSIxIj48c3RvcCBvZmZzZXQ9IjAiIHN0b3AtY29sb3I9ImhzbCgyMTIsNjIlLDU4JSkiLz48c3RvcCBvZmZzZXQ9IjEiIHN0b3AtY29sb3I9ImhzbCgyNTIsNTglLDM4JSkiLz48L2xpbmVhckdyYWRpZW50PjwvZGVmcz48cmVjdCB3aWR0aD0iMzAwIiBoZWlnaHQ9IjMwMCIgZmlsbD0idXJsKCNnKSIvPjx0ZXh0IHg9IjE1MCIgeT0iMTkyIiBmb250LXNpemU9IjE1MCIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZmlsbD0icmdiYSgyNTUsMjU1LDI1NSwuOTIpIiBmb250LWZhbWlseT0iR2VvcmdpYSxzZXJpZiI+4pmqPC90ZXh0Pjwvc3ZnPg==",
+        "genre": "J-Pop",
+        "apple_music_url": null,
+        "shazam_key": "demo0000"
+      },
+      "acoustid": {
+        "score": 0.98,
+        "recording_id": "00000000-0000-4000-8000-000000000000",
+        "title": "Hoshizora Memory",
+        "artist": "Yuzuki Ame",
+        "duration": 214,
+        "album": "Astralis",
+        "releases": [
+          {
+            "title": "Astralis",
+            "date": 2023
+          }
+        ]
+      },
+      "itunes": {
+        "title": "Hoshizora Memory",
+        "artist": "Yuzuki Ame",
+        "album": "Astralis",
+        "art_url": "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIzMDAiIGhlaWdodD0iMzAwIj48ZGVmcz48bGluZWFyR3JhZGllbnQgaWQ9ImciIHgxPSIwIiB5MT0iMCIgeDI9IjEiIHkyPSIxIj48c3RvcCBvZmZzZXQ9IjAiIHN0b3AtY29sb3I9ImhzbCgyMTIsNjIlLDU4JSkiLz48c3RvcCBvZmZzZXQ9IjEiIHN0b3AtY29sb3I9ImhzbCgyNTIsNTglLDM4JSkiLz48L2xpbmVhckdyYWRpZW50PjwvZGVmcz48cmVjdCB3aWR0aD0iMzAwIiBoZWlnaHQ9IjMwMCIgZmlsbD0idXJsKCNnKSIvPjx0ZXh0IHg9IjE1MCIgeT0iMTkyIiBmb250LXNpemU9IjE1MCIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZmlsbD0icmdiYSgyNTUsMjU1LDI1NSwuOTIpIiBmb250LWZhbWlseT0iR2VvcmdpYSxzZXJpZiI+4pmqPC90ZXh0Pjwvc3ZnPg==",
+        "preview_url": "",
+        "duration": 214.3,
+        "track_view_url": "https://example.com/track"
+      },
+      "candidates": [
+        {
+          "source": "Shazam",
+          "title": "Hoshizora Memory",
+          "artist": "Yuzuki Ame",
+          "album": "Astralis",
+          "art_url": "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIzMDAiIGhlaWdodD0iMzAwIj48ZGVmcz48bGluZWFyR3JhZGllbnQgaWQ9ImciIHgxPSIwIiB5MT0iMCIgeDI9IjEiIHkyPSIxIj48c3RvcCBvZmZzZXQ9IjAiIHN0b3AtY29sb3I9ImhzbCgyMTIsNjIlLDU4JSkiLz48c3RvcCBvZmZzZXQ9IjEiIHN0b3AtY29sb3I9ImhzbCgyNTIsNTglLDM4JSkiLz48L2xpbmVhckdyYWRpZW50PjwvZGVmcz48cmVjdCB3aWR0aD0iMzAwIiBoZWlnaHQ9IjMwMCIgZmlsbD0idXJsKCNnKSIvPjx0ZXh0IHg9IjE1MCIgeT0iMTkyIiBmb250LXNpemU9IjE1MCIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZmlsbD0icmdiYSgyNTUsMjU1LDI1NSwuOTIpIiBmb250LWZhbWlseT0iR2VvcmdpYSxzZXJpZiI+4pmqPC90ZXh0Pjwvc3ZnPg==",
+          "preview_url": null
+        },
+        {
+          "source": "AcoustID/MusicBrainz",
+          "title": "Hoshizora Memory",
+          "artist": "Yuzuki Ame",
+          "album": "Astralis",
+          "art_url": null,
+          "preview_url": null
+        }
+      ],
+      "options": {
+        "matched": {
+          "title": "Hoshizora Memory",
+          "artist": "Yuzuki Ame",
+          "album": "Astralis",
+          "album_source": "iTunes",
+          "art_url": "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIzMDAiIGhlaWdodD0iMzAwIj48ZGVmcz48bGluZWFyR3JhZGllbnQgaWQ9ImciIHgxPSIwIiB5MT0iMCIgeDI9IjEiIHkyPSIxIj48c3RvcCBvZmZzZXQ9IjAiIHN0b3AtY29sb3I9ImhzbCgyMTIsNjIlLDU4JSkiLz48c3RvcCBvZmZzZXQ9IjEiIHN0b3AtY29sb3I9ImhzbCgyNTIsNTglLDM4JSkiLz48L2xpbmVhckdyYWRpZW50PjwvZGVmcz48cmVjdCB3aWR0aD0iMzAwIiBoZWlnaHQ9IjMwMCIgZmlsbD0idXJsKCNnKSIvPjx0ZXh0IHg9IjE1MCIgeT0iMTkyIiBmb250LXNpemU9IjE1MCIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZmlsbD0icmdiYSgyNTUsMjU1LDI1NSwuOTIpIiBmb250LWZhbWlseT0iR2VvcmdpYSxzZXJpZiI+4pmqPC90ZXh0Pjwvc3ZnPg==",
+          "preview_url": "",
+          "source": "iTunes",
+          "itunes_rejected": false
+        },
+        "cover": {
+          "title": "Hoshizora Memory",
+          "artist": "Yuzuki Ame",
+          "album": null,
+          "art_url": null,
+          "preview_url": null
+        },
+        "original": {
+          "title": "Hoshizora Memory",
+          "artist": "Yuzuki Ame",
+          "album": null,
+          "art_url": null,
+          "preview_url": null
+        },
+        "title_from_filename": "Hoshizora Memory",
+        "title_trusted": true,
+        "acoustid_alt": null,
+        "suggested": "matched"
+      },
+      "signals": {
+        "S1": {
+          "id": "S1",
+          "label": "Fingerprint agreement",
+          "status": "green",
+          "pass": true,
+          "value": {
+            "title": 100,
+            "artist": 100
+          },
+          "explain": "AcoustID agrees with Shazam"
+        },
+        "S2": {
+          "id": "S2",
+          "label": "Catalog confirmation",
+          "status": "green",
+          "pass": true,
+          "value": {
+            "title": 100,
+            "artist": 100
+          },
+          "explain": "Confirmed on iTunes: “Astralis”"
+        },
+        "S3": {
+          "id": "S3",
+          "label": "Duration sanity",
+          "status": "green",
+          "pass": true,
+          "value": 0.3,
+          "explain": "Length matches iTunes (±0s)"
+        },
+        "S4": {
+          "id": "S4",
+          "label": "Filename corroboration",
+          "status": "yellow",
+          "pass": true,
+          "value": {
+            "title": 100,
+            "artist": 40
+          },
+          "explain": "Filename matches the title but not the artist"
+        },
+        "S5": {
+          "id": "S5",
+          "label": "Cover / remix indicators",
+          "status": "green",
+          "pass": false,
+          "value": [],
+          "explain": "No cover/remix keywords"
+        },
+        "S6": {
+          "id": "S6",
+          "label": "Folder vs artist",
+          "status": "green",
+          "pass": true,
+          "value": {
+            "relationship": "match",
+            "folder": "Yuzuki Ame",
+            "score": 100
+          },
+          "explain": "Folder “Yuzuki Ame” matches the artist"
+        }
+      },
+      "error": null
+    },
+    {
+      "filepath": "/demo/Sora Kanata/Neon Lullaby/Sora Kanata - Neon Lullaby.mp3",
+      "verdict": "VERIFIED",
+      "folder_name": "Sora Kanata",
+      "display_name": "Sora Kanata - Neon Lullaby.mp3",
+      "duration": 199,
+      "proposed": {
+        "title": "Neon Lullaby",
+        "artist": "Sora Kanata",
+        "album": "First Light EP",
+        "art_url": "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIzMDAiIGhlaWdodD0iMzAwIj48ZGVmcz48bGluZWFyR3JhZGllbnQgaWQ9ImciIHgxPSIwIiB5MT0iMCIgeDI9IjEiIHkyPSIxIj48c3RvcCBvZmZzZXQ9IjAiIHN0b3AtY29sb3I9ImhzbCgyODYsNjIlLDU4JSkiLz48c3RvcCBvZmZzZXQ9IjEiIHN0b3AtY29sb3I9ImhzbCgzMjYsNTglLDM4JSkiLz48L2xpbmVhckdyYWRpZW50PjwvZGVmcz48cmVjdCB3aWR0aD0iMzAwIiBoZWlnaHQ9IjMwMCIgZmlsbD0idXJsKCNnKSIvPjx0ZXh0IHg9IjE1MCIgeT0iMTkyIiBmb250LXNpemU9IjE1MCIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZmlsbD0icmdiYSgyNTUsMjU1LDI1NSwuOTIpIiBmb250LWZhbWlseT0iR2VvcmdpYSxzZXJpZiI+4pmqPC90ZXh0Pjwvc3ZnPg==",
+        "preview_url": "",
+        "source": "iTunes"
+      },
+      "shazam": {
+        "title": "Neon Lullaby",
+        "artist": "Sora Kanata",
+        "album": "First Light EP",
+        "art_url": "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIzMDAiIGhlaWdodD0iMzAwIj48ZGVmcz48bGluZWFyR3JhZGllbnQgaWQ9ImciIHgxPSIwIiB5MT0iMCIgeDI9IjEiIHkyPSIxIj48c3RvcCBvZmZzZXQ9IjAiIHN0b3AtY29sb3I9ImhzbCgyODYsNjIlLDU4JSkiLz48c3RvcCBvZmZzZXQ9IjEiIHN0b3AtY29sb3I9ImhzbCgzMjYsNTglLDM4JSkiLz48L2xpbmVhckdyYWRpZW50PjwvZGVmcz48cmVjdCB3aWR0aD0iMzAwIiBoZWlnaHQ9IjMwMCIgZmlsbD0idXJsKCNnKSIvPjx0ZXh0IHg9IjE1MCIgeT0iMTkyIiBmb250LXNpemU9IjE1MCIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZmlsbD0icmdiYSgyNTUsMjU1LDI1NSwuOTIpIiBmb250LWZhbWlseT0iR2VvcmdpYSxzZXJpZiI+4pmqPC90ZXh0Pjwvc3ZnPg==",
+        "genre": "J-Pop",
+        "apple_music_url": null,
+        "shazam_key": "demo0000"
+      },
+      "acoustid": {
+        "score": 0.96,
+        "recording_id": "00000000-0000-4000-8000-000000000000",
+        "title": "Neon Lullaby",
+        "artist": "Sora Kanata",
+        "duration": 199,
+        "album": "First Light EP",
+        "releases": [
+          {
+            "title": "First Light EP",
+            "date": 2023
+          }
+        ]
+      },
+      "itunes": {
+        "title": "Neon Lullaby",
+        "artist": "Sora Kanata",
+        "album": "First Light EP",
+        "art_url": "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIzMDAiIGhlaWdodD0iMzAwIj48ZGVmcz48bGluZWFyR3JhZGllbnQgaWQ9ImciIHgxPSIwIiB5MT0iMCIgeDI9IjEiIHkyPSIxIj48c3RvcCBvZmZzZXQ9IjAiIHN0b3AtY29sb3I9ImhzbCgyODYsNjIlLDU4JSkiLz48c3RvcCBvZmZzZXQ9IjEiIHN0b3AtY29sb3I9ImhzbCgzMjYsNTglLDM4JSkiLz48L2xpbmVhckdyYWRpZW50PjwvZGVmcz48cmVjdCB3aWR0aD0iMzAwIiBoZWlnaHQ9IjMwMCIgZmlsbD0idXJsKCNnKSIvPjx0ZXh0IHg9IjE1MCIgeT0iMTkyIiBmb250LXNpemU9IjE1MCIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZmlsbD0icmdiYSgyNTUsMjU1LDI1NSwuOTIpIiBmb250LWZhbWlseT0iR2VvcmdpYSxzZXJpZiI+4pmqPC90ZXh0Pjwvc3ZnPg==",
+        "preview_url": "",
+        "duration": 199.5,
+        "track_view_url": "https://example.com/track"
+      },
+      "candidates": [
+        {
+          "source": "Shazam",
+          "title": "Neon Lullaby",
+          "artist": "Sora Kanata",
+          "album": "First Light EP",
+          "art_url": "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIzMDAiIGhlaWdodD0iMzAwIj48ZGVmcz48bGluZWFyR3JhZGllbnQgaWQ9ImciIHgxPSIwIiB5MT0iMCIgeDI9IjEiIHkyPSIxIj48c3RvcCBvZmZzZXQ9IjAiIHN0b3AtY29sb3I9ImhzbCgyODYsNjIlLDU4JSkiLz48c3RvcCBvZmZzZXQ9IjEiIHN0b3AtY29sb3I9ImhzbCgzMjYsNTglLDM4JSkiLz48L2xpbmVhckdyYWRpZW50PjwvZGVmcz48cmVjdCB3aWR0aD0iMzAwIiBoZWlnaHQ9IjMwMCIgZmlsbD0idXJsKCNnKSIvPjx0ZXh0IHg9IjE1MCIgeT0iMTkyIiBmb250LXNpemU9IjE1MCIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZmlsbD0icmdiYSgyNTUsMjU1LDI1NSwuOTIpIiBmb250LWZhbWlseT0iR2VvcmdpYSxzZXJpZiI+4pmqPC90ZXh0Pjwvc3ZnPg==",
+          "preview_url": null
+        },
+        {
+          "source": "AcoustID/MusicBrainz",
+          "title": "Neon Lullaby",
+          "artist": "Sora Kanata",
+          "album": "First Light EP",
+          "art_url": null,
+          "preview_url": null
+        }
+      ],
+      "options": {
+        "matched": {
+          "title": "Neon Lullaby",
+          "artist": "Sora Kanata",
+          "album": "First Light EP",
+          "album_source": "iTunes",
+          "art_url": "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIzMDAiIGhlaWdodD0iMzAwIj48ZGVmcz48bGluZWFyR3JhZGllbnQgaWQ9ImciIHgxPSIwIiB5MT0iMCIgeDI9IjEiIHkyPSIxIj48c3RvcCBvZmZzZXQ9IjAiIHN0b3AtY29sb3I9ImhzbCgyODYsNjIlLDU4JSkiLz48c3RvcCBvZmZzZXQ9IjEiIHN0b3AtY29sb3I9ImhzbCgzMjYsNTglLDM4JSkiLz48L2xpbmVhckdyYWRpZW50PjwvZGVmcz48cmVjdCB3aWR0aD0iMzAwIiBoZWlnaHQ9IjMwMCIgZmlsbD0idXJsKCNnKSIvPjx0ZXh0IHg9IjE1MCIgeT0iMTkyIiBmb250LXNpemU9IjE1MCIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZmlsbD0icmdiYSgyNTUsMjU1LDI1NSwuOTIpIiBmb250LWZhbWlseT0iR2VvcmdpYSxzZXJpZiI+4pmqPC90ZXh0Pjwvc3ZnPg==",
+          "preview_url": "",
+          "source": "iTunes",
+          "itunes_rejected": false
+        },
+        "cover": {
+          "title": "Neon Lullaby",
+          "artist": "Sora Kanata",
+          "album": null,
+          "art_url": null,
+          "preview_url": null
+        },
+        "original": {
+          "title": "Neon Lullaby",
+          "artist": "Sora Kanata",
+          "album": null,
+          "art_url": null,
+          "preview_url": null
+        },
+        "title_from_filename": "Neon Lullaby",
+        "title_trusted": true,
+        "acoustid_alt": null,
+        "suggested": "matched"
+      },
+      "signals": {
+        "S1": {
+          "id": "S1",
+          "label": "Fingerprint agreement",
+          "status": "green",
+          "pass": true,
+          "value": {
+            "title": 100,
+            "artist": 100
+          },
+          "explain": "AcoustID agrees with Shazam"
+        },
+        "S2": {
+          "id": "S2",
+          "label": "Catalog confirmation",
+          "status": "green",
+          "pass": true,
+          "value": {
+            "title": 100,
+            "artist": 100
+          },
+          "explain": "Confirmed on iTunes: “First Light EP”"
+        },
+        "S3": {
+          "id": "S3",
+          "label": "Duration sanity",
+          "status": "green",
+          "pass": true,
+          "value": 0.5,
+          "explain": "Length matches iTunes (±0s)"
+        },
+        "S4": {
+          "id": "S4",
+          "label": "Filename corroboration",
+          "status": "green",
+          "pass": true,
+          "value": {
+            "title": 100,
+            "artist": 100
+          },
+          "explain": "Filename matches both title and artist"
+        },
+        "S5": {
+          "id": "S5",
+          "label": "Cover / remix indicators",
+          "status": "green",
+          "pass": false,
+          "value": [],
+          "explain": "No cover/remix keywords"
+        },
+        "S6": {
+          "id": "S6",
+          "label": "Folder vs artist",
+          "status": "green",
+          "pass": true,
+          "value": {
+            "relationship": "match",
+            "folder": "Sora Kanata",
+            "score": 100
+          },
+          "explain": "Folder “Sora Kanata” matches the artist"
+        }
+      },
+      "error": null
+    },
+    {
+      "filepath": "/demo/Nagi Serizawa/Nagi Serizawa - Kaleido Girl.mp3",
+      "verdict": "LIKELY",
+      "folder_name": "Nagi Serizawa",
+      "display_name": "Nagi Serizawa - Kaleido Girl.mp3",
+      "duration": 227,
+      "proposed": {
+        "title": "Kaleido Girl",
+        "artist": "Nagi Serizawa",
+        "album": "Prism",
+        "art_url": "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIzMDAiIGhlaWdodD0iMzAwIj48ZGVmcz48bGluZWFyR3JhZGllbnQgaWQ9ImciIHgxPSIwIiB5MT0iMCIgeDI9IjEiIHkyPSIxIj48c3RvcCBvZmZzZXQ9IjAiIHN0b3AtY29sb3I9ImhzbCgyOCw2MiUsNTglKSIvPjxzdG9wIG9mZnNldD0iMSIgc3RvcC1jb2xvcj0iaHNsKDY4LDU4JSwzOCUpIi8+PC9saW5lYXJHcmFkaWVudD48L2RlZnM+PHJlY3Qgd2lkdGg9IjMwMCIgaGVpZ2h0PSIzMDAiIGZpbGw9InVybCgjZykiLz48dGV4dCB4PSIxNTAiIHk9IjE5MiIgZm9udC1zaXplPSIxNTAiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGZpbGw9InJnYmEoMjU1LDI1NSwyNTUsLjkyKSIgZm9udC1mYW1pbHk9Ikdlb3JnaWEsc2VyaWYiPuKZqjwvdGV4dD48L3N2Zz4=",
+        "preview_url": "",
+        "source": "iTunes"
+      },
+      "shazam": {
+        "title": "Kaleido Girl",
+        "artist": "Nagi Serizawa",
+        "album": "Prism",
+        "art_url": "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIzMDAiIGhlaWdodD0iMzAwIj48ZGVmcz48bGluZWFyR3JhZGllbnQgaWQ9ImciIHgxPSIwIiB5MT0iMCIgeDI9IjEiIHkyPSIxIj48c3RvcCBvZmZzZXQ9IjAiIHN0b3AtY29sb3I9ImhzbCgyOCw2MiUsNTglKSIvPjxzdG9wIG9mZnNldD0iMSIgc3RvcC1jb2xvcj0iaHNsKDY4LDU4JSwzOCUpIi8+PC9saW5lYXJHcmFkaWVudD48L2RlZnM+PHJlY3Qgd2lkdGg9IjMwMCIgaGVpZ2h0PSIzMDAiIGZpbGw9InVybCgjZykiLz48dGV4dCB4PSIxNTAiIHk9IjE5MiIgZm9udC1zaXplPSIxNTAiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGZpbGw9InJnYmEoMjU1LDI1NSwyNTUsLjkyKSIgZm9udC1mYW1pbHk9Ikdlb3JnaWEsc2VyaWYiPuKZqjwvdGV4dD48L3N2Zz4=",
+        "genre": "J-Pop",
+        "apple_music_url": null,
+        "shazam_key": "demo0000"
+      },
+      "acoustid": null,
+      "itunes": {
+        "title": "Kaleido Girl",
+        "artist": "Nagi Serizawa",
+        "album": "Prism",
+        "art_url": "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIzMDAiIGhlaWdodD0iMzAwIj48ZGVmcz48bGluZWFyR3JhZGllbnQgaWQ9ImciIHgxPSIwIiB5MT0iMCIgeDI9IjEiIHkyPSIxIj48c3RvcCBvZmZzZXQ9IjAiIHN0b3AtY29sb3I9ImhzbCgyOCw2MiUsNTglKSIvPjxzdG9wIG9mZnNldD0iMSIgc3RvcC1jb2xvcj0iaHNsKDY4LDU4JSwzOCUpIi8+PC9saW5lYXJHcmFkaWVudD48L2RlZnM+PHJlY3Qgd2lkdGg9IjMwMCIgaGVpZ2h0PSIzMDAiIGZpbGw9InVybCgjZykiLz48dGV4dCB4PSIxNTAiIHk9IjE5MiIgZm9udC1zaXplPSIxNTAiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGZpbGw9InJnYmEoMjU1LDI1NSwyNTUsLjkyKSIgZm9udC1mYW1pbHk9Ikdlb3JnaWEsc2VyaWYiPuKZqjwvdGV4dD48L3N2Zz4=",
+        "preview_url": "",
+        "duration": 227.0,
+        "track_view_url": "https://example.com/track"
+      },
+      "candidates": [
+        {
+          "source": "Shazam",
+          "title": "Kaleido Girl",
+          "artist": "Nagi Serizawa",
+          "album": "Prism",
+          "art_url": "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIzMDAiIGhlaWdodD0iMzAwIj48ZGVmcz48bGluZWFyR3JhZGllbnQgaWQ9ImciIHgxPSIwIiB5MT0iMCIgeDI9IjEiIHkyPSIxIj48c3RvcCBvZmZzZXQ9IjAiIHN0b3AtY29sb3I9ImhzbCgyOCw2MiUsNTglKSIvPjxzdG9wIG9mZnNldD0iMSIgc3RvcC1jb2xvcj0iaHNsKDY4LDU4JSwzOCUpIi8+PC9saW5lYXJHcmFkaWVudD48L2RlZnM+PHJlY3Qgd2lkdGg9IjMwMCIgaGVpZ2h0PSIzMDAiIGZpbGw9InVybCgjZykiLz48dGV4dCB4PSIxNTAiIHk9IjE5MiIgZm9udC1zaXplPSIxNTAiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGZpbGw9InJnYmEoMjU1LDI1NSwyNTUsLjkyKSIgZm9udC1mYW1pbHk9Ikdlb3JnaWEsc2VyaWYiPuKZqjwvdGV4dD48L3N2Zz4=",
+          "preview_url": null
+        }
+      ],
+      "options": {
+        "matched": {
+          "title": "Kaleido Girl",
+          "artist": "Nagi Serizawa",
+          "album": "Prism",
+          "album_source": "iTunes",
+          "art_url": "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIzMDAiIGhlaWdodD0iMzAwIj48ZGVmcz48bGluZWFyR3JhZGllbnQgaWQ9ImciIHgxPSIwIiB5MT0iMCIgeDI9IjEiIHkyPSIxIj48c3RvcCBvZmZzZXQ9IjAiIHN0b3AtY29sb3I9ImhzbCgyOCw2MiUsNTglKSIvPjxzdG9wIG9mZnNldD0iMSIgc3RvcC1jb2xvcj0iaHNsKDY4LDU4JSwzOCUpIi8+PC9saW5lYXJHcmFkaWVudD48L2RlZnM+PHJlY3Qgd2lkdGg9IjMwMCIgaGVpZ2h0PSIzMDAiIGZpbGw9InVybCgjZykiLz48dGV4dCB4PSIxNTAiIHk9IjE5MiIgZm9udC1zaXplPSIxNTAiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGZpbGw9InJnYmEoMjU1LDI1NSwyNTUsLjkyKSIgZm9udC1mYW1pbHk9Ikdlb3JnaWEsc2VyaWYiPuKZqjwvdGV4dD48L3N2Zz4=",
+          "preview_url": "",
+          "source": "iTunes",
+          "itunes_rejected": false
+        },
+        "cover": {
+          "title": "Kaleido Girl",
+          "artist": "Nagi Serizawa",
+          "album": null,
+          "art_url": null,
+          "preview_url": null
+        },
+        "original": {
+          "title": "Kaleido Girl",
+          "artist": "Nagi Serizawa",
+          "album": null,
+          "art_url": null,
+          "preview_url": null
+        },
+        "title_from_filename": "Kaleido Girl",
+        "title_trusted": true,
+        "acoustid_alt": null,
+        "suggested": "matched"
+      },
+      "signals": {
+        "S1": {
+          "id": "S1",
+          "label": "Fingerprint agreement",
+          "status": "neutral",
+          "pass": false,
+          "value": null,
+          "explain": "No independent fingerprint (AcoustID had no match)"
+        },
+        "S2": {
+          "id": "S2",
+          "label": "Catalog confirmation",
+          "status": "green",
+          "pass": true,
+          "value": {
+            "title": 100,
+            "artist": 100
+          },
+          "explain": "Confirmed on iTunes: “Prism”"
+        },
+        "S3": {
+          "id": "S3",
+          "label": "Duration sanity",
+          "status": "green",
+          "pass": true,
+          "value": 0.0,
+          "explain": "Length matches iTunes (±0s)"
+        },
+        "S4": {
+          "id": "S4",
+          "label": "Filename corroboration",
+          "status": "green",
+          "pass": true,
+          "value": {
+            "title": 100,
+            "artist": 100
+          },
+          "explain": "Filename matches both title and artist"
+        },
+        "S5": {
+          "id": "S5",
+          "label": "Cover / remix indicators",
+          "status": "green",
+          "pass": false,
+          "value": [],
+          "explain": "No cover/remix keywords"
+        },
+        "S6": {
+          "id": "S6",
+          "label": "Folder vs artist",
+          "status": "green",
+          "pass": true,
+          "value": {
+            "relationship": "match",
+            "folder": "Nagi Serizawa",
+            "score": 100
+          },
+          "explain": "Folder “Nagi Serizawa” matches the artist"
+        }
+      },
+      "error": null
+    },
+    {
+      "filepath": "/demo/Mochizuki Rei/Mochizuki Rei - Yumeutsutsu.flac",
+      "verdict": "LIKELY",
+      "folder_name": "Mochizuki Rei",
+      "display_name": "Mochizuki Rei - Yumeutsutsu.flac",
+      "duration": 300,
+      "proposed": {
+        "title": "Yumeutsutsu",
+        "artist": "Mochizuki Rei",
+        "album": "Reverie",
+        "art_url": null,
+        "preview_url": null,
+        "source": "AcoustID"
+      },
+      "shazam": null,
+      "acoustid": {
+        "score": 0.94,
+        "recording_id": "00000000-0000-4000-8000-000000000000",
+        "title": "Yumeutsutsu",
+        "artist": "Mochizuki Rei",
+        "duration": 244,
+        "album": "Reverie",
+        "releases": [
+          {
+            "title": "Reverie",
+            "date": 2023
+          }
+        ]
+      },
+      "itunes": null,
+      "candidates": [
+        {
+          "source": "AcoustID/MusicBrainz",
+          "title": "Yumeutsutsu",
+          "artist": "Mochizuki Rei",
+          "album": "Reverie",
+          "art_url": null,
+          "preview_url": null
+        }
+      ],
+      "options": {
+        "matched": {
+          "title": "Yumeutsutsu",
+          "artist": "Mochizuki Rei",
+          "album": "Reverie",
+          "album_source": "AcoustID",
+          "art_url": null,
+          "preview_url": null,
+          "source": "AcoustID",
+          "itunes_rejected": false
+        },
+        "cover": {
+          "title": "Yumeutsutsu",
+          "artist": "Mochizuki Rei",
+          "album": null,
+          "art_url": null,
+          "preview_url": null
+        },
+        "original": {
+          "title": "Yumeutsutsu",
+          "artist": "Mochizuki Rei",
+          "album": null,
+          "art_url": null,
+          "preview_url": null
+        },
+        "title_from_filename": "Yumeutsutsu",
+        "title_trusted": true,
+        "acoustid_alt": null,
+        "suggested": "matched"
+      },
+      "signals": {
+        "S1": {
+          "id": "S1",
+          "label": "Fingerprint agreement",
+          "status": "neutral",
+          "pass": false,
+          "value": null,
+          "explain": "No Shazam result to cross-check"
+        },
+        "S2": {
+          "id": "S2",
+          "label": "Catalog confirmation",
+          "status": "red",
+          "pass": false,
+          "value": null,
+          "explain": "Not found in the iTunes catalog"
+        },
+        "S3": {
+          "id": "S3",
+          "label": "Duration sanity",
+          "status": "red",
+          "pass": false,
+          "value": 56,
+          "explain": "Length off by 56s vs AcoustID"
+        },
+        "S4": {
+          "id": "S4",
+          "label": "Filename corroboration",
+          "status": "green",
+          "pass": true,
+          "value": {
+            "title": 100,
+            "artist": 100
+          },
+          "explain": "Filename matches both title and artist"
+        },
+        "S5": {
+          "id": "S5",
+          "label": "Cover / remix indicators",
+          "status": "green",
+          "pass": false,
+          "value": [],
+          "explain": "No cover/remix keywords"
+        },
+        "S6": {
+          "id": "S6",
+          "label": "Folder vs artist",
+          "status": "green",
+          "pass": true,
+          "value": {
+            "relationship": "match",
+            "folder": "Mochizuki Rei",
+            "score": 100
+          },
+          "explain": "Folder “Mochizuki Rei” matches the artist"
+        }
+      },
+      "error": null
+    },
+    {
+      "filepath": "/demo/Jesse Cormac/Runaway Sunday (Jesse Cormac cover).mp3",
+      "verdict": "COVER",
+      "folder_name": "Jesse Cormac",
+      "display_name": "Runaway Sunday (Jesse Cormac cover).mp3",
+      "duration": 218,
+      "proposed": {
+        "title": "Runaway Sunday",
+        "artist": "Jesse Cormac",
+        "album": null,
+        "art_url": null,
+        "preview_url": null,
+        "original_artist": "Della Vaughn",
+        "source": "cover (folder artist)"
+      },
+      "shazam": {
+        "title": "Runaway Sunday",
+        "artist": "Della Vaughn",
+        "album": "Midnight Radio",
+        "art_url": "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIzMDAiIGhlaWdodD0iMzAwIj48ZGVmcz48bGluZWFyR3JhZGllbnQgaWQ9ImciIHgxPSIwIiB5MT0iMCIgeDI9IjEiIHkyPSIxIj48c3RvcCBvZmZzZXQ9IjAiIHN0b3AtY29sb3I9ImhzbCgyNTgsNjIlLDU4JSkiLz48c3RvcCBvZmZzZXQ9IjEiIHN0b3AtY29sb3I9ImhzbCgyOTgsNTglLDM4JSkiLz48L2xpbmVhckdyYWRpZW50PjwvZGVmcz48cmVjdCB3aWR0aD0iMzAwIiBoZWlnaHQ9IjMwMCIgZmlsbD0idXJsKCNnKSIvPjx0ZXh0IHg9IjE1MCIgeT0iMTkyIiBmb250LXNpemU9IjE1MCIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZmlsbD0icmdiYSgyNTUsMjU1LDI1NSwuOTIpIiBmb250LWZhbWlseT0iR2VvcmdpYSxzZXJpZiI+4pmqPC90ZXh0Pjwvc3ZnPg==",
+        "genre": "Pop",
+        "apple_music_url": null,
+        "shazam_key": "demo0000"
+      },
+      "acoustid": null,
+      "itunes": null,
+      "candidates": [
+        {
+          "source": "Shazam",
+          "title": "Runaway Sunday",
+          "artist": "Della Vaughn",
+          "album": "Midnight Radio",
+          "art_url": "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIzMDAiIGhlaWdodD0iMzAwIj48ZGVmcz48bGluZWFyR3JhZGllbnQgaWQ9ImciIHgxPSIwIiB5MT0iMCIgeDI9IjEiIHkyPSIxIj48c3RvcCBvZmZzZXQ9IjAiIHN0b3AtY29sb3I9ImhzbCgyNTgsNjIlLDU4JSkiLz48c3RvcCBvZmZzZXQ9IjEiIHN0b3AtY29sb3I9ImhzbCgyOTgsNTglLDM4JSkiLz48L2xpbmVhckdyYWRpZW50PjwvZGVmcz48cmVjdCB3aWR0aD0iMzAwIiBoZWlnaHQ9IjMwMCIgZmlsbD0idXJsKCNnKSIvPjx0ZXh0IHg9IjE1MCIgeT0iMTkyIiBmb250LXNpemU9IjE1MCIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZmlsbD0icmdiYSgyNTUsMjU1LDI1NSwuOTIpIiBmb250LWZhbWlseT0iR2VvcmdpYSxzZXJpZiI+4pmqPC90ZXh0Pjwvc3ZnPg==",
+          "preview_url": null
+        }
+      ],
+      "options": {
+        "matched": {
+          "title": "Runaway Sunday",
+          "artist": "Della Vaughn",
+          "album": "Midnight Radio",
+          "album_source": "Shazam",
+          "art_url": "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIzMDAiIGhlaWdodD0iMzAwIj48ZGVmcz48bGluZWFyR3JhZGllbnQgaWQ9ImciIHgxPSIwIiB5MT0iMCIgeDI9IjEiIHkyPSIxIj48c3RvcCBvZmZzZXQ9IjAiIHN0b3AtY29sb3I9ImhzbCgyNTgsNjIlLDU4JSkiLz48c3RvcCBvZmZzZXQ9IjEiIHN0b3AtY29sb3I9ImhzbCgyOTgsNTglLDM4JSkiLz48L2xpbmVhckdyYWRpZW50PjwvZGVmcz48cmVjdCB3aWR0aD0iMzAwIiBoZWlnaHQ9IjMwMCIgZmlsbD0idXJsKCNnKSIvPjx0ZXh0IHg9IjE1MCIgeT0iMTkyIiBmb250LXNpemU9IjE1MCIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZmlsbD0icmdiYSgyNTUsMjU1LDI1NSwuOTIpIiBmb250LWZhbWlseT0iR2VvcmdpYSxzZXJpZiI+4pmqPC90ZXh0Pjwvc3ZnPg==",
+          "preview_url": null,
+          "source": "Shazam",
+          "itunes_rejected": false
+        },
+        "cover": {
+          "title": "Runaway Sunday",
+          "artist": "Jesse Cormac",
+          "album": null,
+          "art_url": null,
+          "preview_url": null
+        },
+        "original": {
+          "title": "Runaway Sunday",
+          "artist": "Jesse Cormac",
+          "album": null,
+          "art_url": null,
+          "preview_url": null
+        },
+        "title_from_filename": "Runaway Sunday",
+        "title_trusted": true,
+        "acoustid_alt": null,
+        "suggested": "cover"
+      },
+      "signals": {
+        "S1": {
+          "id": "S1",
+          "label": "Fingerprint agreement",
+          "status": "neutral",
+          "pass": false,
+          "value": null,
+          "explain": "No independent fingerprint (AcoustID had no match)"
+        },
+        "S2": {
+          "id": "S2",
+          "label": "Catalog confirmation",
+          "status": "red",
+          "pass": false,
+          "value": null,
+          "explain": "Not found in the iTunes catalog"
+        },
+        "S3": {
+          "id": "S3",
+          "label": "Duration sanity",
+          "status": "neutral",
+          "pass": false,
+          "value": null,
+          "explain": "Duration unknown — can't compare"
+        },
+        "S4": {
+          "id": "S4",
+          "label": "Filename corroboration",
+          "status": "yellow",
+          "pass": true,
+          "value": {
+            "title": 100,
+            "artist": 35
+          },
+          "explain": "Filename matches the title but not the artist"
+        },
+        "S5": {
+          "id": "S5",
+          "label": "Cover / remix indicators",
+          "status": "yellow",
+          "pass": true,
+          "value": [
+            "cover"
+          ],
+          "explain": "Cover/remix keywords found: cover"
+        },
+        "S6": {
+          "id": "S6",
+          "label": "Folder vs artist",
+          "status": "yellow",
+          "pass": false,
+          "value": {
+            "relationship": "different",
+            "folder": "Jesse Cormac",
+            "score": 17
+          },
+          "explain": "Folder “Jesse Cormac” is a different artist — possible cover"
+        }
+      },
+      "error": null
+    },
+    {
+      "filepath": "/demo/nekomelody/【歌ってみた】Hoshizora Memory covered by nekomelody.mp3",
+      "verdict": "COVER",
+      "folder_name": "nekomelody",
+      "display_name": "【歌ってみた】Hoshizora Memory covered by nekomelody.mp3",
+      "duration": 213,
+      "proposed": {
+        "title": "Hoshizora Memory",
+        "artist": "nekomelody",
+        "album": null,
+        "art_url": null,
+        "preview_url": null,
+        "original_artist": "Yuzuki Ame",
+        "source": "cover (folder artist)"
+      },
+      "shazam": {
+        "title": "Hoshizora Memory",
+        "artist": "Yuzuki Ame",
+        "album": "Astralis",
+        "art_url": "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIzMDAiIGhlaWdodD0iMzAwIj48ZGVmcz48bGluZWFyR3JhZGllbnQgaWQ9ImciIHgxPSIwIiB5MT0iMCIgeDI9IjEiIHkyPSIxIj48c3RvcCBvZmZzZXQ9IjAiIHN0b3AtY29sb3I9ImhzbCgyMTIsNjIlLDU4JSkiLz48c3RvcCBvZmZzZXQ9IjEiIHN0b3AtY29sb3I9ImhzbCgyNTIsNTglLDM4JSkiLz48L2xpbmVhckdyYWRpZW50PjwvZGVmcz48cmVjdCB3aWR0aD0iMzAwIiBoZWlnaHQ9IjMwMCIgZmlsbD0idXJsKCNnKSIvPjx0ZXh0IHg9IjE1MCIgeT0iMTkyIiBmb250LXNpemU9IjE1MCIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZmlsbD0icmdiYSgyNTUsMjU1LDI1NSwuOTIpIiBmb250LWZhbWlseT0iR2VvcmdpYSxzZXJpZiI+4pmqPC90ZXh0Pjwvc3ZnPg==",
+        "genre": "J-Pop",
+        "apple_music_url": null,
+        "shazam_key": "demo0000"
+      },
+      "acoustid": null,
+      "itunes": null,
+      "candidates": [
+        {
+          "source": "Shazam",
+          "title": "Hoshizora Memory",
+          "artist": "Yuzuki Ame",
+          "album": "Astralis",
+          "art_url": "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIzMDAiIGhlaWdodD0iMzAwIj48ZGVmcz48bGluZWFyR3JhZGllbnQgaWQ9ImciIHgxPSIwIiB5MT0iMCIgeDI9IjEiIHkyPSIxIj48c3RvcCBvZmZzZXQ9IjAiIHN0b3AtY29sb3I9ImhzbCgyMTIsNjIlLDU4JSkiLz48c3RvcCBvZmZzZXQ9IjEiIHN0b3AtY29sb3I9ImhzbCgyNTIsNTglLDM4JSkiLz48L2xpbmVhckdyYWRpZW50PjwvZGVmcz48cmVjdCB3aWR0aD0iMzAwIiBoZWlnaHQ9IjMwMCIgZmlsbD0idXJsKCNnKSIvPjx0ZXh0IHg9IjE1MCIgeT0iMTkyIiBmb250LXNpemU9IjE1MCIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZmlsbD0icmdiYSgyNTUsMjU1LDI1NSwuOTIpIiBmb250LWZhbWlseT0iR2VvcmdpYSxzZXJpZiI+4pmqPC90ZXh0Pjwvc3ZnPg==",
+          "preview_url": null
+        }
+      ],
+      "options": {
+        "matched": {
+          "title": "Hoshizora Memory",
+          "artist": "Yuzuki Ame",
+          "album": "Astralis",
+          "album_source": "Shazam",
+          "art_url": "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIzMDAiIGhlaWdodD0iMzAwIj48ZGVmcz48bGluZWFyR3JhZGllbnQgaWQ9ImciIHgxPSIwIiB5MT0iMCIgeDI9IjEiIHkyPSIxIj48c3RvcCBvZmZzZXQ9IjAiIHN0b3AtY29sb3I9ImhzbCgyMTIsNjIlLDU4JSkiLz48c3RvcCBvZmZzZXQ9IjEiIHN0b3AtY29sb3I9ImhzbCgyNTIsNTglLDM4JSkiLz48L2xpbmVhckdyYWRpZW50PjwvZGVmcz48cmVjdCB3aWR0aD0iMzAwIiBoZWlnaHQ9IjMwMCIgZmlsbD0idXJsKCNnKSIvPjx0ZXh0IHg9IjE1MCIgeT0iMTkyIiBmb250LXNpemU9IjE1MCIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZmlsbD0icmdiYSgyNTUsMjU1LDI1NSwuOTIpIiBmb250LWZhbWlseT0iR2VvcmdpYSxzZXJpZiI+4pmqPC90ZXh0Pjwvc3ZnPg==",
+          "preview_url": null,
+          "source": "Shazam",
+          "itunes_rejected": false
+        },
+        "cover": {
+          "title": "Hoshizora Memory",
+          "artist": "nekomelody",
+          "album": null,
+          "art_url": null,
+          "preview_url": null
+        },
+        "original": {
+          "title": "Hoshizora Memory",
+          "artist": "nekomelody",
+          "album": null,
+          "art_url": null,
+          "preview_url": null
+        },
+        "title_from_filename": "Hoshizora Memory",
+        "title_trusted": true,
+        "acoustid_alt": null,
+        "suggested": "cover"
+      },
+      "signals": {
+        "S1": {
+          "id": "S1",
+          "label": "Fingerprint agreement",
+          "status": "neutral",
+          "pass": false,
+          "value": null,
+          "explain": "No independent fingerprint (AcoustID had no match)"
+        },
+        "S2": {
+          "id": "S2",
+          "label": "Catalog confirmation",
+          "status": "red",
+          "pass": false,
+          "value": null,
+          "explain": "Not found in the iTunes catalog"
+        },
+        "S3": {
+          "id": "S3",
+          "label": "Duration sanity",
+          "status": "neutral",
+          "pass": false,
+          "value": null,
+          "explain": "Duration unknown — can't compare"
+        },
+        "S4": {
+          "id": "S4",
+          "label": "Filename corroboration",
+          "status": "yellow",
+          "pass": true,
+          "value": {
+            "title": 100,
+            "artist": 40
+          },
+          "explain": "Filename matches the title but not the artist"
+        },
+        "S5": {
+          "id": "S5",
+          "label": "Cover / remix indicators",
+          "status": "yellow",
+          "pass": true,
+          "value": [
+            "covered by",
+            "covered",
+            "歌ってみた"
+          ],
+          "explain": "Cover/remix keywords found: covered by, covered, 歌ってみた"
+        },
+        "S6": {
+          "id": "S6",
+          "label": "Folder vs artist",
+          "status": "yellow",
+          "pass": false,
+          "value": {
+            "relationship": "different",
+            "folder": "nekomelody",
+            "score": 30
+          },
+          "explain": "Folder “nekomelody” is a different artist — possible cover"
+        }
+      },
+      "error": null
+    },
+    {
+      "filepath": "/demo/MapleUta/Yumeutsutsu (MapleUta ver).mp3",
+      "verdict": "COVER",
+      "folder_name": "MapleUta",
+      "display_name": "Yumeutsutsu (MapleUta ver).mp3",
+      "duration": 231,
+      "proposed": {
+        "title": "Yumeutsutsu",
+        "artist": "MapleUta",
+        "album": null,
+        "art_url": null,
+        "preview_url": null,
+        "original_artist": "Mochizuki Rei",
+        "source": "cover (folder artist)"
+      },
+      "shazam": {
+        "title": "Yumeutsutsu",
+        "artist": "Mochizuki Rei",
+        "album": null,
+        "art_url": null,
+        "genre": "J-Pop",
+        "apple_music_url": null,
+        "shazam_key": "demo0000"
+      },
+      "acoustid": null,
+      "itunes": null,
+      "candidates": [
+        {
+          "source": "Shazam",
+          "title": "Yumeutsutsu",
+          "artist": "Mochizuki Rei",
+          "album": null,
+          "art_url": null,
+          "preview_url": null
+        }
+      ],
+      "options": {
+        "matched": {
+          "title": "Yumeutsutsu",
+          "artist": "Mochizuki Rei",
+          "album": null,
+          "album_source": null,
+          "art_url": null,
+          "preview_url": null,
+          "source": null,
+          "itunes_rejected": false
+        },
+        "cover": {
+          "title": "Yumeutsutsu",
+          "artist": "MapleUta",
+          "album": null,
+          "art_url": null,
+          "preview_url": null
+        },
+        "original": {
+          "title": "Yumeutsutsu",
+          "artist": "MapleUta",
+          "album": null,
+          "art_url": null,
+          "preview_url": null
+        },
+        "title_from_filename": "Yumeutsutsu",
+        "title_trusted": true,
+        "acoustid_alt": null,
+        "suggested": "cover"
+      },
+      "signals": {
+        "S1": {
+          "id": "S1",
+          "label": "Fingerprint agreement",
+          "status": "neutral",
+          "pass": false,
+          "value": null,
+          "explain": "No independent fingerprint (AcoustID had no match)"
+        },
+        "S2": {
+          "id": "S2",
+          "label": "Catalog confirmation",
+          "status": "red",
+          "pass": false,
+          "value": null,
+          "explain": "Not found in the iTunes catalog"
+        },
+        "S3": {
+          "id": "S3",
+          "label": "Duration sanity",
+          "status": "neutral",
+          "pass": false,
+          "value": null,
+          "explain": "Duration unknown — can't compare"
+        },
+        "S4": {
+          "id": "S4",
+          "label": "Filename corroboration",
+          "status": "yellow",
+          "pass": true,
+          "value": {
+            "title": 100,
+            "artist": 31
+          },
+          "explain": "Filename matches the title but not the artist"
+        },
+        "S5": {
+          "id": "S5",
+          "label": "Cover / remix indicators",
+          "status": "yellow",
+          "pass": true,
+          "value": [
+            "ver"
+          ],
+          "explain": "Cover/remix keywords found: ver"
+        },
+        "S6": {
+          "id": "S6",
+          "label": "Folder vs artist",
+          "status": "yellow",
+          "pass": false,
+          "value": {
+            "relationship": "different",
+            "folder": "MapleUta",
+            "score": 19
+          },
+          "explain": "Folder “MapleUta” is a different artist — possible cover"
+        }
+      },
+      "error": null
+    },
+    {
+      "filepath": "/demo/Yuzuki Ame/Aigata.mp3",
+      "verdict": "UNVERIFIED",
+      "folder_name": "Yuzuki Ame",
+      "display_name": "Aigata.mp3",
+      "duration": 205,
+      "proposed": null,
+      "shazam": {
+        "title": "Aigata",
+        "artist": "Yuzuki Ame",
+        "album": null,
+        "art_url": "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIzMDAiIGhlaWdodD0iMzAwIj48ZGVmcz48bGluZWFyR3JhZGllbnQgaWQ9ImciIHgxPSIwIiB5MT0iMCIgeDI9IjEiIHkyPSIxIj48c3RvcCBvZmZzZXQ9IjAiIHN0b3AtY29sb3I9ImhzbCgyMTIsNjIlLDU4JSkiLz48c3RvcCBvZmZzZXQ9IjEiIHN0b3AtY29sb3I9ImhzbCgyNTIsNTglLDM4JSkiLz48L2xpbmVhckdyYWRpZW50PjwvZGVmcz48cmVjdCB3aWR0aD0iMzAwIiBoZWlnaHQ9IjMwMCIgZmlsbD0idXJsKCNnKSIvPjx0ZXh0IHg9IjE1MCIgeT0iMTkyIiBmb250LXNpemU9IjE1MCIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZmlsbD0icmdiYSgyNTUsMjU1LDI1NSwuOTIpIiBmb250LWZhbWlseT0iR2VvcmdpYSxzZXJpZiI+4pmqPC90ZXh0Pjwvc3ZnPg==",
+        "genre": "J-Pop",
+        "apple_music_url": null,
+        "shazam_key": "demo0000"
+      },
+      "acoustid": {
+        "score": 0.91,
+        "recording_id": "00000000-0000-4000-8000-000000000000",
+        "title": "Aigata",
+        "artist": "Mochizuki Rei",
+        "duration": 205,
+        "album": "Reverie",
+        "releases": [
+          {
+            "title": "Reverie",
+            "date": 2023
+          }
+        ]
+      },
+      "itunes": null,
+      "candidates": [
+        {
+          "source": "Shazam",
+          "title": "Aigata",
+          "artist": "Yuzuki Ame",
+          "album": null,
+          "art_url": "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIzMDAiIGhlaWdodD0iMzAwIj48ZGVmcz48bGluZWFyR3JhZGllbnQgaWQ9ImciIHgxPSIwIiB5MT0iMCIgeDI9IjEiIHkyPSIxIj48c3RvcCBvZmZzZXQ9IjAiIHN0b3AtY29sb3I9ImhzbCgyMTIsNjIlLDU4JSkiLz48c3RvcCBvZmZzZXQ9IjEiIHN0b3AtY29sb3I9ImhzbCgyNTIsNTglLDM4JSkiLz48L2xpbmVhckdyYWRpZW50PjwvZGVmcz48cmVjdCB3aWR0aD0iMzAwIiBoZWlnaHQ9IjMwMCIgZmlsbD0idXJsKCNnKSIvPjx0ZXh0IHg9IjE1MCIgeT0iMTkyIiBmb250LXNpemU9IjE1MCIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZmlsbD0icmdiYSgyNTUsMjU1LDI1NSwuOTIpIiBmb250LWZhbWlseT0iR2VvcmdpYSxzZXJpZiI+4pmqPC90ZXh0Pjwvc3ZnPg==",
+          "preview_url": null
+        },
+        {
+          "source": "AcoustID/MusicBrainz",
+          "title": "Aigata",
+          "artist": "Mochizuki Rei",
+          "album": "Reverie",
+          "art_url": null,
+          "preview_url": null
+        }
+      ],
+      "options": {
+        "matched": {
+          "title": "Aigata",
+          "artist": "Yuzuki Ame",
+          "album": "Reverie",
+          "album_source": "AcoustID",
+          "art_url": "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIzMDAiIGhlaWdodD0iMzAwIj48ZGVmcz48bGluZWFyR3JhZGllbnQgaWQ9ImciIHgxPSIwIiB5MT0iMCIgeDI9IjEiIHkyPSIxIj48c3RvcCBvZmZzZXQ9IjAiIHN0b3AtY29sb3I9ImhzbCgyMTIsNjIlLDU4JSkiLz48c3RvcCBvZmZzZXQ9IjEiIHN0b3AtY29sb3I9ImhzbCgyNTIsNTglLDM4JSkiLz48L2xpbmVhckdyYWRpZW50PjwvZGVmcz48cmVjdCB3aWR0aD0iMzAwIiBoZWlnaHQ9IjMwMCIgZmlsbD0idXJsKCNnKSIvPjx0ZXh0IHg9IjE1MCIgeT0iMTkyIiBmb250LXNpemU9IjE1MCIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZmlsbD0icmdiYSgyNTUsMjU1LDI1NSwuOTIpIiBmb250LWZhbWlseT0iR2VvcmdpYSxzZXJpZiI+4pmqPC90ZXh0Pjwvc3ZnPg==",
+          "preview_url": null,
+          "source": "AcoustID",
+          "itunes_rejected": false
+        },
+        "cover": {
+          "title": "Aigata",
+          "artist": "Yuzuki Ame",
+          "album": null,
+          "art_url": null,
+          "preview_url": null
+        },
+        "original": {
+          "title": "Aigata",
+          "artist": "Yuzuki Ame",
+          "album": null,
+          "art_url": null,
+          "preview_url": null
+        },
+        "title_from_filename": "Aigata",
+        "title_trusted": true,
+        "acoustid_alt": {
+          "title": "Aigata",
+          "artist": "Mochizuki Rei",
+          "album": "Reverie",
+          "art_url": null,
+          "preview_url": null
+        },
+        "suggested": null
+      },
+      "signals": {
+        "S1": {
+          "id": "S1",
+          "label": "Fingerprint agreement",
+          "status": "red",
+          "pass": false,
+          "value": {
+            "title": 100,
+            "artist": 43
+          },
+          "explain": "AcoustID disagrees — it heard “Aigata — Mochizuki Rei”"
+        },
+        "S2": {
+          "id": "S2",
+          "label": "Catalog confirmation",
+          "status": "red",
+          "pass": false,
+          "value": null,
+          "explain": "Not found in the iTunes catalog"
+        },
+        "S3": {
+          "id": "S3",
+          "label": "Duration sanity",
+          "status": "green",
+          "pass": true,
+          "value": 0,
+          "explain": "Length matches AcoustID (±0s)"
+        },
+        "S4": {
+          "id": "S4",
+          "label": "Filename corroboration",
+          "status": "yellow",
+          "pass": true,
+          "value": {
+            "title": 100,
+            "artist": 40
+          },
+          "explain": "Filename matches the title but not the artist"
+        },
+        "S5": {
+          "id": "S5",
+          "label": "Cover / remix indicators",
+          "status": "green",
+          "pass": false,
+          "value": [],
+          "explain": "No cover/remix keywords"
+        },
+        "S6": {
+          "id": "S6",
+          "label": "Folder vs artist",
+          "status": "green",
+          "pass": true,
+          "value": {
+            "relationship": "match",
+            "folder": "Yuzuki Ame",
+            "score": 100
+          },
+          "explain": "Folder “Yuzuki Ame” matches the artist"
+        }
+      },
+      "error": null
+    },
+    {
+      "filepath": "/demo/YukiSongs/track_047_final_mix.mp3",
+      "verdict": "UNVERIFIED",
+      "folder_name": "YukiSongs",
+      "display_name": "track_047_final_mix.mp3",
+      "duration": 188,
+      "proposed": null,
+      "shazam": {
+        "title": "Starlit",
+        "artist": "HoshiCovers",
+        "album": null,
+        "art_url": null,
+        "genre": "J-Pop",
+        "apple_music_url": null,
+        "shazam_key": "demo0000"
+      },
+      "acoustid": null,
+      "itunes": {
+        "title": "Starlight Express",
+        "artist": "The Broadway Cast",
+        "album": "Overtures",
+        "art_url": "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIzMDAiIGhlaWdodD0iMzAwIj48ZGVmcz48bGluZWFyR3JhZGllbnQgaWQ9ImciIHgxPSIwIiB5MT0iMCIgeDI9IjEiIHkyPSIxIj48c3RvcCBvZmZzZXQ9IjAiIHN0b3AtY29sb3I9ImhzbCgzNDAsNjIlLDU4JSkiLz48c3RvcCBvZmZzZXQ9IjEiIHN0b3AtY29sb3I9ImhzbCgyMCw1OCUsMzglKSIvPjwvbGluZWFyR3JhZGllbnQ+PC9kZWZzPjxyZWN0IHdpZHRoPSIzMDAiIGhlaWdodD0iMzAwIiBmaWxsPSJ1cmwoI2cpIi8+PHRleHQgeD0iMTUwIiB5PSIxOTIiIGZvbnQtc2l6ZT0iMTUwIiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBmaWxsPSJyZ2JhKDI1NSwyNTUsMjU1LC45MikiIGZvbnQtZmFtaWx5PSJHZW9yZ2lhLHNlcmlmIj7imao8L3RleHQ+PC9zdmc+",
+        "preview_url": "",
+        "duration": 242.0,
+        "track_view_url": "https://example.com/track"
+      },
+      "candidates": [
+        {
+          "source": "Shazam",
+          "title": "Starlit",
+          "artist": "HoshiCovers",
+          "album": null,
+          "art_url": null,
+          "preview_url": null
+        }
+      ],
+      "options": {
+        "matched": {
+          "title": "Starlit",
+          "artist": "HoshiCovers",
+          "album": null,
+          "album_source": null,
+          "art_url": null,
+          "preview_url": null,
+          "source": null,
+          "itunes_rejected": true
+        },
+        "cover": {
+          "title": "track 047 final mix",
+          "artist": "YukiSongs",
+          "album": null,
+          "art_url": null,
+          "preview_url": null
+        },
+        "original": {
+          "title": "track 047 final mix",
+          "artist": "YukiSongs",
+          "album": null,
+          "art_url": null,
+          "preview_url": null
+        },
+        "title_from_filename": "track 047 final mix",
+        "title_trusted": false,
+        "acoustid_alt": null,
+        "suggested": null
+      },
+      "signals": {
+        "S1": {
+          "id": "S1",
+          "label": "Fingerprint agreement",
+          "status": "neutral",
+          "pass": false,
+          "value": null,
+          "explain": "No independent fingerprint (AcoustID had no match)"
+        },
+        "S2": {
+          "id": "S2",
+          "label": "Catalog confirmation",
+          "status": "yellow",
+          "pass": false,
+          "value": {
+            "title": 58,
+            "artist": 29
+          },
+          "explain": "iTunes returned a different track (“Starlight Express”)"
+        },
+        "S3": {
+          "id": "S3",
+          "label": "Duration sanity",
+          "status": "neutral",
+          "pass": false,
+          "value": null,
+          "explain": "Duration unknown — can't compare"
+        },
+        "S4": {
+          "id": "S4",
+          "label": "Filename corroboration",
+          "status": "red",
+          "pass": false,
+          "value": {
+            "title": 44,
+            "artist": 15
+          },
+          "explain": "Filename doesn't corroborate the match"
+        },
+        "S5": {
+          "id": "S5",
+          "label": "Cover / remix indicators",
+          "status": "green",
+          "pass": false,
+          "value": [],
+          "explain": "No cover/remix keywords"
+        },
+        "S6": {
+          "id": "S6",
+          "label": "Folder vs artist",
+          "status": "yellow",
+          "pass": false,
+          "value": {
+            "relationship": "different",
+            "folder": "YukiSongs",
+            "score": 30
+          },
+          "explain": "Folder “YukiSongs” is a different artist — possible cover"
+        }
+      },
+      "error": null
+    },
+    {
+      "filepath": "/demo/Unsorted/unknown_upload_2019.wav",
+      "verdict": "NO_MATCH",
+      "folder_name": "Unsorted",
+      "display_name": "unknown_upload_2019.wav",
+      "duration": 176,
+      "proposed": null,
+      "shazam": null,
+      "acoustid": null,
+      "itunes": null,
+      "candidates": [],
+      "options": {
+        "matched": {
+          "title": null,
+          "artist": null,
+          "album": null,
+          "album_source": null,
+          "art_url": null,
+          "preview_url": null,
+          "source": null,
+          "itunes_rejected": false
+        },
+        "cover": {
+          "title": "unknown upload 2019",
+          "artist": "Unsorted",
+          "album": null,
+          "art_url": null,
+          "preview_url": null
+        },
+        "original": {
+          "title": "unknown upload 2019",
+          "artist": "Unsorted",
+          "album": null,
+          "art_url": null,
+          "preview_url": null
+        },
+        "title_from_filename": "unknown upload 2019",
+        "title_trusted": false,
+        "acoustid_alt": null,
+        "suggested": null
+      },
+      "signals": {
+        "S1": {
+          "id": "S1",
+          "label": "Fingerprint agreement",
+          "status": "neutral",
+          "pass": false,
+          "value": null,
+          "explain": "No Shazam result to cross-check"
+        },
+        "S2": {
+          "id": "S2",
+          "label": "Catalog confirmation",
+          "status": "red",
+          "pass": false,
+          "value": null,
+          "explain": "Not found in the iTunes catalog"
+        },
+        "S3": {
+          "id": "S3",
+          "label": "Duration sanity",
+          "status": "neutral",
+          "pass": false,
+          "value": null,
+          "explain": "Duration unknown — can't compare"
+        },
+        "S4": {
+          "id": "S4",
+          "label": "Filename corroboration",
+          "status": "red",
+          "pass": false,
+          "value": {
+            "title": 0,
+            "artist": 0
+          },
+          "explain": "Filename doesn't corroborate the match"
+        },
+        "S5": {
+          "id": "S5",
+          "label": "Cover / remix indicators",
+          "status": "green",
+          "pass": false,
+          "value": [],
+          "explain": "No cover/remix keywords"
+        },
+        "S6": {
+          "id": "S6",
+          "label": "Folder vs artist",
+          "status": "yellow",
+          "pass": false,
+          "value": {
+            "relationship": "different",
+            "folder": "Unsorted",
+            "score": 0
+          },
+          "explain": "Folder “Unsorted” is a different artist — possible cover"
+        }
+      },
+      "error": null
+    },
+    {
+      "filepath": "/demo/Sora Kanata/First Light EP/First Light.m4a",
+      "tagged": {
+        "title": "First Light",
+        "artist": "Sora Kanata",
+        "album": "First Light EP"
+      },
+      "verdict": "ALREADY_TAGGED",
+      "folder_name": "Sora Kanata",
+      "display_name": "First Light.m4a",
+      "duration": 208
+    }
+  ]
+}

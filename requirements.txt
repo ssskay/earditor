@@ -1,0 +1,10 @@
+# Earditor — install with: pip3 install --break-system-packages -r requirements.txt
+# fpcalc (Chromaprint) must be on PATH — brew install chromaprint
+shazamio            # async Shazam fingerprinting (NOT the dead ShazamAPI)
+pyacoustid          # AcoustID fingerprint + lookup (needs fpcalc)
+musicbrainzngs      # MusicBrainz enrichment
+mutagen             # ID3 read/write + duration
+rapidfuzz           # fuzzy matching for the signals
+pykakasi            # Japanese -> romaji for S4
+flask               # review UI
+requests            # iTunes Search API

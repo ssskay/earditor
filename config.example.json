@@ -1,0 +1,24 @@
+{
+  "_comment": "Copy this file to config.json and edit music_path for your machine. config.json is gitignored so your library location stays local. The AcoustID API key is NEVER stored here — it is read from $ACOUSTID_API_KEY or the macOS Keychain (service 'acoustid').",
+  "music_path": "~/Music/Music/Media.localized/Music",
+  "audio_extensions": [".mp3", ".m4a", ".flac", ".wav", ".aac"],
+  "thresholds": {
+    "fuzzy_match": 85,
+    "duration_pct": 0.10,
+    "duration_abs_sec": 15,
+    "acoustid_min_score": 0.5
+  },
+  "delays": {
+    "shazam": 1.5,
+    "musicbrainz": 1.1,
+    "itunes": 0.3
+  },
+  "use_llm_tiebreaker": false,
+  "llm_model": "qwen2.5:7b",
+  "playlist_name": "Earditor — Tagged",
+  "cover_album_template": "{artist} (Covers)",
+  "original_album_template": "{artist} (Originals)",
+  "stamp_cover_grouping": true,
+  "scan_queue_target": 10,
+  "scan_max_files": 500
+}
