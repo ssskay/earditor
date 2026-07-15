@@ -19,7 +19,9 @@ import time
 
 # Make the project root importable + the working directory, whether launched from
 # the repo (python3 packaging/app.py) or from inside a py2app bundle.
-ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+ROOT = os.environ.get(
+    "RESOURCEPATH", os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+)
 if ROOT not in sys.path:
     sys.path.insert(0, ROOT)
 os.chdir(ROOT)
@@ -53,7 +55,8 @@ def main():
     db.init_db(str(DB_PATH))
     port = _free_port(int(os.environ.get("PORT", "5001")))
     threading.Thread(target=_serve, args=(port,), daemon=True).start()
-    _wait_ready(port)
+    if not _wait_ready(port):
+        raise RuntimeError("The local review service did not start in time")
     webview.create_window(
         "Earditor — Review",
         f"http://127.0.0.1:{port}",

@@ -12,6 +12,7 @@ import json
 import logging
 import sqlite3
 import time
+from pathlib import Path
 
 import config
 
@@ -76,9 +77,10 @@ def _now():
 
 def connect(db_path):
     global _migrated
-    # Rename the pre-Earditor db file (shazamer.db → earditor.db) before opening,
-    # so 11k+ processed tracks carry over instead of starting from an empty DB.
-    config.migrate_db_filename()
+    # Only the real application database participates in name migration. Demo and
+    # test databases must never mutate a user's local state as a side effect.
+    if Path(db_path).resolve() == config.DB_PATH.resolve():
+        config.migrate_db_filename()
     conn = sqlite3.connect(db_path, timeout=30)
     conn.row_factory = sqlite3.Row
     conn.execute("PRAGMA journal_mode=WAL")

@@ -23,7 +23,7 @@ import sys
 import time
 from pathlib import Path
 
-from config import load_config, get_acoustid_key, DB_PATH
+from config import load_config, get_acoustid_key, DB_PATH, DATA_DIR
 from covers import is_neutral_channel
 import db
 from sources.shazam import ShazamSource
@@ -35,7 +35,7 @@ from utils import (filename_tokens, extract_folder_name, raw_folder_name,
                    is_well_tagged, tags_look_messy)
 from verify import verify
 
-LOG_DIR = Path(__file__).resolve().parent / "logs"
+LOG_DIR = DATA_DIR / "logs"
 
 # Verdicts that actually put a card in the review queue. Everything else
 # (ALREADY_TAGGED, NO_MATCH, AUTO_ACCEPTED, ERROR) resolves without human input —
@@ -44,7 +44,7 @@ QUEUEABLE = {"VERIFIED", "LIKELY", "COVER", "UNVERIFIED"}
 
 
 def setup_logging(verbose=False):
-    LOG_DIR.mkdir(exist_ok=True)
+    LOG_DIR.mkdir(parents=True, exist_ok=True)
     logfile = LOG_DIR / f"scan_{time.strftime('%Y%m%d_%H%M%S')}.log"
     level = logging.DEBUG if verbose else logging.INFO
     fmt = "%(asctime)s %(levelname)-7s %(name)s: %(message)s"
@@ -267,7 +267,7 @@ def scan_one(filepath, sources, cfg, conn, log, skip_tagged=True, auto_accept=Tr
         return "ERROR"
 
 
-def main():
+def main(argv=None):
     ap = argparse.ArgumentParser(description="Earditor — scan pipeline")
     ap.add_argument("--limit", type=int, default=None, help="scan at most N pending files")
     ap.add_argument("--queue-target", type=int, default=None,
@@ -285,7 +285,7 @@ def main():
                     help="read-only: never write tags or touch Music.app; Topic-channel "
                          "matches become review cards instead of auto-accepting")
     ap.add_argument("-v", "--verbose", action="store_true", help="DEBUG logging")
-    args = ap.parse_args()
+    args = ap.parse_args(argv)
 
     log, logfile = setup_logging(args.verbose)
     cfg = load_config()
@@ -303,7 +303,7 @@ def main():
     else:
         if not os.path.isdir(music_path):
             log.error("Music path does not exist: %s", music_path)
-            sys.exit(1)
+            return 1
         log.info("Walking library: %s", music_path)
         all_files = list(walk_library(music_path, cfg.audio_extensions))
         added = db.add_pending_bulk(conn, all_files)
@@ -365,7 +365,8 @@ def main():
     log.info("Verdicts this run: %s", tally)
     log.info("DB status counts: %s", db.count_by_status(conn))
     conn.close()
+    return 0
 
 
 if __name__ == "__main__":
-    main()
+    raise SystemExit(main())

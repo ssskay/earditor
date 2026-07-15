@@ -30,6 +30,11 @@ python3 packaging/setup_app.py py2app       # → dist/Earditor.app
 open dist/Earditor.app
 ```
 
+The repository's **Build macOS app** GitHub Actions workflow runs this same build
+on demand and for `v*` tags, then uploads `Earditor-unsigned-macOS.zip` as a smoke-
+test artifact. Do not publish that unsigned artifact as the main download; sign and
+notarize the final zip first.
+
 ## 3. Sign + notarize (needs your Apple Developer ID)
 
 ```bash
@@ -45,11 +50,14 @@ xcrun stapler staple dist/Earditor.app
 
 Then zip the stapled `.app` and attach it to a GitHub Release.
 
-## Known wrinkles (expect to iterate)
+## Runtime and release notes
 
-- **Templates:** Flask loads `templates/review.html` from disk. `setup_app.py` bundles
-  it, but confirm `render_template` resolves inside the bundle; if not, set an explicit
-  `template_folder` on the Flask app pointing at the bundled resource path.
+- **Local state:** packaged builds store `config.json`, `earditor.db`, and logs in
+  `~/Library/Application Support/Earditor`. They are not written into the signed app
+  bundle and survive upgrades.
+- **Resources:** the review template, demo fixtures, and example config are bundled
+  under py2app's Resources directory. The in-app Scan button calls the bundled scan
+  entry point directly; it does not depend on a loose `scan.py` file.
 - **`fpcalc`:** AcoustID needs the Chromaprint `fpcalc` binary. Either require users to
   `brew install chromaprint`, or vendor a signed `fpcalc` into the bundle and point
   `$FPCALC` at it.
@@ -61,5 +69,6 @@ Then zip the stapled `.app` and attach it to a GitHub Release.
 - **shazamio / native deps:** verify `shazamio` and its async stack import cleanly from
   the frozen bundle; add anything py2app misses to `includes` / `packages`.
 
-This is a foundation to build on once your Developer ID is active — not a finished,
-notarized artifact.
+Before publishing, smoke-test the stapled app on a second Mac or a clean macOS user:
+launch it from Finder, approve Music automation, scan a small copied library, accept
+and undo one track, quit/relaunch, and confirm the queue persists.

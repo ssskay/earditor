@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" role="img" aria-label="Earditor app icon: a music metadata tag with an evidence checkmark">
+  <rect width="1024" height="1024" rx="224" fill="#8d3454"/>
+  <path d="M244 214h390l156 156v344c0 53-43 96-96 96H244c-53 0-96-43-96-96V310c0-53 43-96 96-96Z" fill="#fff9f5"/>
+  <path d="M634 214v118c0 21 17 38 38 38h118" fill="none" stroke="#dba4b8" stroke-width="48" stroke-linejoin="round"/>
+  <path d="M555 365v240c0 64-53 116-118 116-58 0-105-39-105-88 0-50 47-90 105-90 22 0 42 6 58 16V405l174-38v86l-114 25" fill="#8d3454"/>
+  <circle cx="704" cy="694" r="112" fill="#e5ad42"/>
+  <path d="m650 694 36 38 74-82" fill="none" stroke="#402717" stroke-width="32" stroke-linecap="round" stroke-linejoin="round"/>
+</svg>

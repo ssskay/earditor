@@ -130,7 +130,7 @@
   .scan-bar.indet > i { width: 40%; animation: indet 1.2s var(--ease-in-out) infinite; }
   @keyframes indet { 0% { margin-left: -40%; } 100% { margin-left: 100%; } }
 
-  main { max-width: 1060px; margin: 0 auto; padding: 24px; }
+  main { max-width: min(1680px, 94vw); margin: 0 auto; padding: 24px; }
   .tier-head {
     display: flex; align-items: center; gap: 10px; margin: 34px 0 14px;
     font-family: var(--font-mono); font-size: 11px; text-transform: uppercase; letter-spacing: .14em; color: var(--ink-mute);
@@ -179,7 +179,8 @@
   .fields input::placeholder { color: var(--placeholder); }
 
   /* Signal chips (S1–S6) */
-  .chips { display: flex; flex-wrap: wrap; gap: 6px; margin: 12px 0; }
+  .checks-lead { font-size: 11px; color: var(--ink-mute); margin: 14px 0 6px; text-transform: uppercase; letter-spacing: .06em; }
+  .chips { display: flex; flex-wrap: wrap; gap: 6px; margin: 6px 0 12px; }
   .chip {
     font-size: 11.5px; padding: 3px 9px 3px 7px; border-radius: var(--r-xs); border: 1px solid transparent;
     display: inline-flex; align-items: center; gap: 6px; cursor: default;
@@ -196,6 +197,12 @@
   .plabel .hint { color: var(--placeholder); text-transform: none; letter-spacing: 0; }
   audio { width: 100%; height: 34px; }
   .noaudio { font-size: 12px; color: var(--placeholder); padding: 8px 0; }
+  .cmp-src { text-transform: none; letter-spacing: 0; color: var(--ink-mute); }
+  .both-row { display: flex; align-items: center; gap: 10px; margin: 2px 0 4px; flex-wrap: wrap; }
+  .both-row .hint { font-size: 11.5px; color: var(--ink-mute); }
+  /* Pending = a version is selected but not yet written. Make Confirm the obvious next step. */
+  .card.pending .act-confirm { box-shadow: 0 0 0 3px var(--rose-line); font-weight: 650; }
+  .card.pending.active { border-color: var(--rose); }
   .compare-hint { font-size: 11.5px; color: var(--ink-mute); margin: 4px 0 6px; line-height: 1.6; }
   .compare-hint b { font-family: var(--font-mono); color: var(--ink); background: var(--panel-2); border: 1px solid var(--line);
     border-radius: var(--r-xs); padding: 1px 5px; font-size: 10.5px; }
@@ -211,7 +218,7 @@
   .cand:hover { border-color: var(--rose-line); transform: translateX(2px); }
   .cand.sel { border-color: var(--rose); box-shadow: inset 0 0 0 1px var(--rose); background: var(--panel); }
   .cand img { width: 40px; height: 40px; border-radius: var(--r-sm); object-fit: cover; background: var(--panel-3); flex: none; }
-  .cand .cmeta { min-width: 0; }
+  .cand .cmeta { flex: 1; min-width: 0; }
   .cand .ct { font-size: 13px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
   .cand .cs { font-size: 11px; color: var(--ink-mute); }
   .cand .src { font-family: var(--font-mono); font-size: 9.5px; letter-spacing: .02em; color: var(--ink-mute); border: 1px solid var(--line); border-radius: var(--r-xs); padding: 2px 6px; }
@@ -349,7 +356,7 @@
   <span class="skipped" id="skipped"></span>
   <div class="spacer"></div>
   <span class="help">
-    <kbd>1</kbd> matched · <kbd>2</kbd> cover · <kbd>3</kbd> original · <kbd>4</kbd> skip · <kbd>E</kbd> edit · <kbd>Space</kbd> play · <kbd>X</kbd> cue · <kbd>[</kbd><kbd>]</kbd> nudge · <kbd>U</kbd> undo · <kbd>Y</kbd> YouTube · <kbd>←</kbd><kbd>→</kbd> move
+    <kbd>1</kbd> matched · <kbd>2</kbd> cover · <kbd>3</kbd> original · <kbd>⏎</kbd> confirm · <kbd>4</kbd> skip · <kbd>E</kbd> edit · <kbd>Space</kbd> play · <kbd>X</kbd> cue · <kbd>[</kbd><kbd>]</kbd> nudge · <kbd>U</kbd> undo · <kbd>Y</kbd> YouTube · <kbd>←</kbd><kbd>→</kbd> move
   </span>
   <span class="scan-status" id="scanStatus">
     <span class="spin"></span>
@@ -386,6 +393,15 @@ let VERIFIED = [];   // filepaths currently in the VERIFIED tier
 let SCANNING = false;  // a background scan.py job is running
 let SCAN_POLL = null;  // interval id while polling scan status
 let LAST_ACTION = null;  // filepath of the last accept/cover/skip, for U = undo
+// Paging: render the queue in batches so the browser never builds all ~2,700
+// cards at once (rendering the whole queue synchronously is what hangs Safari).
+const PAGE_SIZE = 40;
+let TOTAL = 0;         // total items across the whole queue (from the server)
+let RENDERED = 0;      // how many cards are currently in the DOM
+let LOADING_MORE = false;
+let LAST_VERDICT = null;  // last tier a separator was emitted for, while appending
+let TIER_COUNTS = {};  // full per-tier counts (for header + batch button)
+let OVERLAY = false;   // true while "Play both" overlays local + compare audio
 // Album templates stamped on album-less covers/originals so they read as fully
 // tagged and don't loop back into the queue on the next scan. From config.json.
 const COVER_ALBUM_TEMPLATE = {{ cover_album_template|tojson }};
@@ -464,9 +480,30 @@ async function loadRecent() {
 }
 
 async function load() {
-  const r = await fetch("/api/queue");
-  const data = await r.json();
-  render(data);
+  ACTIVE = -1; CARDS = []; VERIFIED = []; RENDERED = 0; TOTAL = 0; LAST_VERDICT = null;
+  const main = $("#main");
+  main.innerHTML = `<div class="empty" id="loading">Loading review queue…</div>`;
+  let data;
+  try {
+    data = await (await fetch(`/api/queue?offset=0&limit=${PAGE_SIZE}`)).json();
+  } catch (e) {
+    main.innerHTML = `<div class="empty">Couldn't load the queue — ${esc(String(e))}.
+      <br><button class="btn" onclick="load()">Retry</button></div>`;
+    return;
+  }
+  renderInit(data);
+}
+
+// Fetch and append the next page as the user nears the end of what's rendered.
+async function loadMore() {
+  if (LOADING_MORE || RENDERED >= TOTAL) return;
+  LOADING_MORE = true;
+  try {
+    const data = await (await fetch(`/api/queue?offset=${RENDERED}&limit=${PAGE_SIZE}`)).json();
+    updateHeader(data);            // keep counts fresh if the DB changed underneath
+    appendCards(data.groups);
+  } catch (_) { /* transient — the next advance will retry */ }
+  LOADING_MORE = false;
 }
 
 const TIER_LABEL = { ALREADY_TAGGED: "TAGGED" };
@@ -477,13 +514,35 @@ function tierPills(counts) {
   return order.map(v => `<span class="tierpill tp-${v}">${tierLabel(v)} <b>${counts[v]||0}</b></span>`).join("");
 }
 
+// Plain-English signal labels (the S1..S6 codes read as jargon at a glance).
+// Keyed by id so the scoring logic in verify.py stays untouched.
+const SIGNAL_LABEL = {
+  S1: "Fingerprints agree",       // Shazam & AcoustID heard the same track
+  S2: "In a real catalog",        // Apple lists this artist + title
+  S3: "Length matches",           // file length ≈ the matched track
+  S4: "Filename backs it up",     // the filename mentions this title + artist
+  S5: "Cover/remix clues",       // status says whether clues were found
+  S6: "Folder matches artist",    // the uploader folder equals the artist
+};
+const SIG_MARK = { green: "✓", red: "✗", yellow: "~", neutral: "·" };
 function chip(s) {
-  return `<span class="chip ${s.status}" title="${esc(s.explain)}">
-    <span class="sid">${s.id}</span>${esc(s.label)}</span>`;
+  let label = SIGNAL_LABEL[s.id] || s.label;
+  if (s.id === "S5") {
+    label = s.status === "yellow" ? "Cover/remix clues found"
+      : s.status === "green" ? "No cover/remix clues" : label;
+  }
+  const mark = SIG_MARK[s.status] || "·";
+  return `<span class="chip ${s.status}" title="${esc(s.id + " · " + s.label + (s.explain ? " — " + s.explain : ""))}">
+    <span class="sid">${mark}</span>${esc(label)}</span>`;
 }
 
 function candRow(c, fp, idx) {
   const art = c.art_url ? `<img src="${esc(c.art_url)}" loading="lazy">` : `<img>`;
+  // Only offer 🔊 when there is actually a preview to play. iTunes candidates carry
+  // one; Shazam / AcoustID readings don't — a button that just says "no preview" is
+  // worse than no button. (The matching iTunes reading below usually has audio.)
+  const prev = c.preview_url
+    ? `<button class="cprev" title="Listen to this candidate (iTunes preview)">🔊</button>` : "";
   return `<div class="cand" data-fp="${esc(fp)}" data-idx="${idx}"
       data-title="${esc(c.title)}" data-artist="${esc(c.artist)}" data-album="${esc(c.album||'')}"
       data-art="${esc(c.art_url||'')}" data-preview="${esc(c.preview_url||'')}">
@@ -492,7 +551,7 @@ function candRow(c, fp, idx) {
       <div class="ct">${esc(c.title)||'—'}</div>
       <div class="cs">${esc(c.artist)||'—'}${c.album ? ' · '+esc(c.album) : ''}</div>
     </div>
-    <button class="cprev" title="Listen to this candidate (iTunes preview)">🔊</button>
+    ${prev}
     <span class="src">${esc(c.source)}</span>
   </div>`;
 }
@@ -554,8 +613,8 @@ function optCard(opt) {
   const hot = opt.hot ? `<kbd class="okey">${opt.hot}</kbd>` : "";
   // Art line: matched keeps the source's cover; cover/original never borrow it (§5).
   const artLine = (opt.role === "matched")
-    ? optTagLine("Art", t.art_url ? (opt.albumSource === "iTunes" ? "iTunes cover" : "Shazam cover") : "", "— (none)")
-    : `<div class="otag"><span class="ok">Art</span><span class="ov blank">— keeps file's own</span></div>`;
+    ? optTagLine("Art", t.art_url ? (opt.albumSource === "iTunes" ? "iTunes artwork" : "Shazam artwork") : "", "— (none)")
+    : `<div class="otag"><span class="ok">Art</span><span class="ov blank">— keeps file's own artwork</span></div>`;
   const grpLine = t.grouping ? optTagLine("Grouping", t.grouping) : "";
   const note = opt.note ? `<div class="onote ${opt.noteClass||''}">${esc(opt.note)}</div>` : "";
   return `<button class="opt role-${opt.role} ${opt.suggested?'suggested':''}" data-key="${opt.key}" type="button">
@@ -624,10 +683,14 @@ function card(item) {
         <div class="noaudio">disabled in demo — no real audio files</div></div>`
     : `<div class="player"><div class="plabel">▶ Local file <span class="hint">(Space to play)</span></div>
       <audio controls preload="none" class="local" src="/api/audio?path=${enc(fp)}"></audio></div>`;
-  const previewAudio = preview
-    ? `<div class="player"><div class="plabel">▶ iTunes preview</div>
-        <audio controls preload="none" class="preview" src="${esc(preview)}"></audio></div>`
-    : `<div class="player"><div class="plabel">▶ iTunes preview</div><div class="noaudio">no preview available</div></div>`;
+  // Compare slot: holds the audio for whichever version is selected. Auto-fills
+  // with the matched preview if there is one; otherwise shows an honest empty
+  // state (common for niche tracks Apple's catalog doesn't have).
+  const compareAudio = `<div class="player compare-slot">
+      <div class="plabel">▶ Compare<span class="cmp-src hint"></span></div>
+      <audio controls preload="none" class="preview"${preview ? ` src="${esc(preview)}"` : ' style="display:none"'}></audio>
+      <div class="noaudio cmp-empty"${preview ? ' style="display:none"' : ''}>No iTunes audio for this version — press <b>Y</b> for YouTube, or pick another reading below.</div>
+    </div>`;
 
   const el = document.createElement("div");
   el.className = "card tier-" + item.verdict + (hasOptions ? "" : " needfields");
@@ -653,9 +716,21 @@ function card(item) {
       <div class="folder">📁 <b>${folder ? esc(folder) : "— no artist folder —"}</b>
         <span class="ph2">artist folder (often the uploader)</span></div>
       ${taggedNote}
+
+      <!-- EVIDENCE FIRST: what the sources heard, the checks, and the raw readings,
+           so you can judge cover-vs-original before the decision options. -->
       ${hasOptions ? sourceRow(item) : ""}
       ${conflictNote}
-      <div class="q">${hasOptions ? "<b>What is this recording?</b> Pressing a button writes exactly its tags." : ""}</div>
+      ${hasOptions ? '<div class="checks-lead">The checks — why this reading</div>' : ""}
+      <div class="chips">${signals.map(chip).join("")}</div>
+      ${candHtml}
+      <div class="players">${localAudio}${compareAudio}</div>
+      ${DEMO ? "" : '<div class="both-row"><button class="btn ghost act-both" type="button">▶ Play both together</button><span class="hint">A/B by default — playing one pauses the other</span></div>'}
+      <div class="compare-hint">⇄ <b>X</b> cues the local file to the preview zone · <b>[</b> <b>]</b> nudge ±5s to line them up
+        ${hasOptions ? "· <b>E</b> edit the highlighted option" : ""}</div>
+
+      <!-- DECISION LAST: now that the evidence is in view, choose how to tag it. -->
+      <div class="q">${hasOptions ? "<b>So — what is this recording?</b> Pick one, then press <kbd>⏎</kbd> to confirm — nothing is written until you do." : ""}</div>
       ${optionsHtml}
       <div class="fieldswrap">
         <div class="fields">
@@ -668,13 +743,8 @@ function card(item) {
           <button class="btn ghost act-cancel">Cancel <kbd>Esc</kbd></button>
         </div>
       </div>
-      <div class="chips">${signals.map(chip).join("")}</div>
-      ${candHtml}
-      <div class="players">${localAudio}${previewAudio}</div>
-      <div class="compare-hint">⇄ <b>X</b> cues the local file to the preview zone · <b>[</b> <b>]</b> nudge ±5s to line them up
-        ${hasOptions ? "· <b>E</b> edit the highlighted option" : ""}</div>
       <div class="actions">
-        ${hasOptions ? "" : '<button class="btn ok act-accept">✓ Accept <kbd>A</kbd></button>'}
+        ${hasOptions ? '<button class="btn ok act-confirm">✓ Confirm <kbd>⏎</kbd></button>' : '<button class="btn ok act-accept">✓ Accept <kbd>A</kbd></button>'}
         ${hasOptions ? '<button class="btn ghost act-edit">✎ Edit <kbd>E</kbd></button>' : ''}
         <button class="btn ghost act-skip">Skip <kbd>${hasOptions ? '4' : 'S'}</kbd></button>
         <button class="btn ghost act-yt">▶ Copy + YouTube <kbd>Y</kbd></button>
@@ -704,6 +774,10 @@ function card(item) {
   el.querySelector(".act-skip").addEventListener("click", () => skip(el));
   el.querySelector(".act-yt").addEventListener("click", () => youtube(el));
   el.querySelector(".act-cue").addEventListener("click", () => cueToPreview(el));
+  const cf = el.querySelector(".act-confirm");
+  if (cf) cf.addEventListener("click", () => confirmCard(el));
+  const bothBtn = el.querySelector(".act-both");
+  if (bothBtn) bothBtn.addEventListener("click", () => playBoth(el));
   el.addEventListener("mousedown", () => setActiveByEl(el));
 
   // Pre-select the suggested option (or matched) so Edit/YouTube have a basis.
@@ -713,42 +787,55 @@ function card(item) {
   return el;
 }
 
-function render(data) {
-  const main = $("#main");
-  main.innerHTML = "";
-  CARDS = []; VERIFIED = [];
-  $("#tiers").innerHTML = tierPills(data.tier_counts);
+function updateHeader(data) {
+  TIER_COUNTS = data.tier_counts || {};
+  TOTAL = data.total || 0;
+  $("#tiers").innerHTML = tierPills(TIER_COUNTS);
   const nTagged = (data.status_counts || {}).tagged || 0;
   $("#skipped").innerHTML = nTagged ? `✓ ${nTagged} already clean-tagged, skipped` : "";
+  const nVerified = TIER_COUNTS.VERIFIED || 0;
+  const bb = $("#batchBtn");
+  if (nVerified) {
+    bb.style.display = "";
+    bb.textContent = `Accept all ${nVerified} verified`;
+    bb.onclick = batchAccept;
+  } else bb.style.display = "none";
+}
 
-  if (!data.groups.length) {
-    main.innerHTML = `<div class="empty">🎉 Queue is empty — nothing left to review.<br>
-      Scan your library for new rips to add to the queue.
-      <br><button class="btn scan" onclick="startScan()" ${SCANNING ? "disabled" : ""}>⟳ Scan for more</button></div>`;
-    $("#batchBtn").style.display = "none";
-    return;
-  }
-
-  for (const g of data.groups) {
-    const head = document.createElement("div");
-    head.className = "tier-head tier-" + g.verdict;
-    head.innerHTML = `<span class="bar"></span>${tierLabel(g.verdict)} · ${g.items.length}`;
-    main.appendChild(head);
+// Append a page of cards, emitting a tier separator whenever the tier changes.
+// Worst-first order is preserved because the server pages a worst-first list.
+function appendCards(groups) {
+  const main = $("#main");
+  for (const g of groups) {
     for (const item of g.items) {
+      if (item.verdict !== LAST_VERDICT) {
+        const head = document.createElement("div");
+        head.className = "tier-head tier-" + item.verdict;
+        head.innerHTML = `<span class="bar"></span>${tierLabel(item.verdict)} · ${TIER_COUNTS[item.verdict] || g.items.length}`;
+        main.appendChild(head);
+        LAST_VERDICT = item.verdict;
+      }
       const el = card(item);
       main.appendChild(el);
       CARDS.push({ el, data: item });
       if (item.verdict === "VERIFIED") VERIFIED.push(el);
+      RENDERED++;
     }
   }
+}
 
-  const bb = $("#batchBtn");
-  if (VERIFIED.length) {
-    bb.style.display = "";
-    bb.textContent = `Accept all ${VERIFIED.length} verified`;
-    bb.onclick = batchAccept;
-  } else bb.style.display = "none";
-
+function renderInit(data) {
+  const main = $("#main");
+  main.innerHTML = "";
+  CARDS = []; VERIFIED = []; RENDERED = 0; LAST_VERDICT = null;
+  updateHeader(data);
+  if (!TOTAL || !data.groups.length) {
+    main.innerHTML = `<div class="empty">🎉 Queue is empty — nothing left to review.<br>
+      Scan your library for new rips to add to the queue.
+      <br><button class="btn scan" onclick="startScan()" ${SCANNING ? "disabled" : ""}>⟳ Scan for more</button></div>`;
+    return;
+  }
+  appendCards(data.groups);
   if (CARDS.length) setActive(0);
 }
 
@@ -787,8 +874,18 @@ function onOption(el, key) {
   el._curOpt = opt;
   fillFields(el, opt.tags);
   markSel(el, key);
-  if (el.classList.contains("editing")) return;
-  acceptTags(el, { ...opt.tags });
+  el.classList.add("pending");            // selected, not yet written
+  loadCompare(el, opt.tags, opt.label);   // A/B this version against the local file
+  // Confirm is explicit now — Enter or the ⏎ Confirm button. Nothing is written on select.
+}
+
+// Commit the pending selection (Enter / ⏎ Confirm). This is the only option write path.
+function confirmCard(el) {
+  if (el.classList.contains("editing")) { saveEdit(el); return; }
+  if (!(el._opts && el._opts.length)) { saveEdit(el, true); return; }  // no-options fallback card
+  const tags = fieldTags(el);
+  if (!tags.title) { toast("Title required"); editHighlighted(el); return; }
+  acceptTags(el, tags);
 }
 
 function pickCandidate(el, cd) {
@@ -798,10 +895,13 @@ function pickCandidate(el, cd) {
   fillFields(el, tags);
   markSel(el, null);
   editHighlighted(el, /*keepFields=*/true);
+  el.classList.add("pending");
   // AcoustID/MusicBrainz candidates carry no art — resolve iTunes art for the pick.
   if (!cd.dataset.art) resolveCandArt(cd).then(a => { if (a) el._curOpt.tags.art_url = a; });
-  const pv = el.querySelector(".preview");
-  if (cd.dataset.preview && pv) pv.src = cd.dataset.preview;
+  // Load this reading's audio into the compare slot (its own preview, else iTunes lookup).
+  const srcEl = cd.querySelector(".src");
+  loadCompare(el, { preview_url: cd.dataset.preview || "", artist: cd.dataset.artist, title: cd.dataset.title },
+              srcEl ? srcEl.textContent : "");
 }
 
 function editHighlighted(el, keepFields) {
@@ -809,7 +909,7 @@ function editHighlighted(el, keepFields) {
   if (!keepFields) fillFields(el, el._curOpt.tags);
   el.classList.add("editing");
   const tf = el.querySelector(".f-title");
-  if (tf) { tf.focus(); tf.select(); }
+  if (tf) { tf.focus({ preventScroll: true }); tf.select(); }
 }
 function cancelEdit(el) {
   el.classList.remove("editing");
@@ -828,6 +928,7 @@ async function saveEdit(el, fallback) {
 async function acceptTags(el, tags) {
   if (!tags.title) { toast("Title required"); editHighlighted(el); return; }
   el.classList.add("done");
+  el.classList.remove("pending");
   const res = await post("/api/accept", { filepath: el.dataset.fp, tags });
   if (res.ok) {
     LAST_ACTION = el.dataset.fp;
@@ -843,6 +944,7 @@ async function acceptTags(el, tags) {
 
 async function skip(el) {
   el.classList.add("done");
+  el.classList.remove("pending");
   await post("/api/skip", { filepath: el.dataset.fp });
   LAST_ACTION = el.dataset.fp;
   toast("Skipped", el.dataset.fp);
@@ -850,43 +952,114 @@ async function skip(el) {
 }
 
 async function batchAccept() {
-  // Batch-accept writes the "Matched artist" (option 1) tags for each verified card.
-  const tracks = VERIFIED.filter(el => !el.classList.contains("done"))
-    .map(el => {
-      const o = (el._opts || []).find(x => x.key === "matched");
-      return { filepath: el.dataset.fp, tags: o ? { ...o.tags } : fieldTags(el) };
-    })
-    .filter(t => t.tags.title);
-  if (!tracks.length) return;
+  // Bulk-writes the "Matched artist" tags for EVERY verified track (not just the
+  // loaded page). Destructive, so it's gated behind an explicit confirm.
+  const n = TIER_COUNTS.VERIFIED || 0;
+  if (!n) return;
+  if (!confirm(`Write tags to all ${n} verified track(s)?\nThis edits the real files and updates Music.app.`)) return;
   $("#batchBtn").disabled = true;
+  let items = [];
+  try {
+    const d = await (await fetch(`/api/queue?verdict=VERIFIED&limit=0`)).json();
+    items = d.groups.reduce((a, g) => a.concat(g.items), []);
+  } catch (e) {
+    toast("Couldn't load the verified set");
+    $("#batchBtn").disabled = false;
+    return;
+  }
+  const tracks = items.map(it => {
+    const opts = buildOptions(it);
+    const m = opts.find(o => o.key === "matched") || opts[0];
+    return (m && m.tags.title) ? { filepath: it.filepath, tags: { ...m.tags } } : null;
+  }).filter(Boolean);
+  if (!tracks.length) { toast("Nothing to accept"); $("#batchBtn").disabled = false; return; }
   const res = await post("/api/batch_accept", { tracks });
-  VERIFIED.forEach(el => el.classList.add("done"));
   toast(`Batch accepted ${res.accepted} verified track(s)`);
   $("#batchBtn").disabled = false;
   setTimeout(load, 900);
 }
 
 /* keyboard nav */
-function setActive(i) {
+function setActive(i, scroll) {
+  if (scroll === undefined) scroll = true;
   if (ACTIVE >= 0 && CARDS[ACTIVE]) CARDS[ACTIVE].el.classList.remove("active");
   ACTIVE = Math.max(0, Math.min(i, CARDS.length - 1));
   const c = CARDS[ACTIVE];
-  if (c) { c.el.classList.add("active"); c.el.scrollIntoView({ behavior: "smooth", block: "center" }); }
+  // "nearest" scrolls only enough to reveal the card — no yank-to-center on tall cards.
+  if (c) { c.el.classList.add("active"); if (scroll) c.el.scrollIntoView({ behavior: "smooth", block: "nearest" }); }
+  if (ACTIVE >= CARDS.length - 6) loadMore();   // prefetch the next page as we near the end
 }
 function setActiveByEl(el) {
   const idx = CARDS.findIndex(c => c.el === el);
-  if (idx >= 0) setActive(idx);
+  if (idx >= 0) setActive(idx, false);   // clicking within a card must never scroll it
 }
-function advanceFrom(el) {
+async function advanceFrom(el) {
   const idx = CARDS.findIndex(c => c.el === el);
   let n = idx + 1;
   while (n < CARDS.length && CARDS[n].el.classList.contains("done")) n++;
-  if (n < CARDS.length) setActive(n);
+  if (n < CARDS.length) { setActive(n); return; }
+  // Ran out of loaded cards but more exist — pull the next page, then continue.
+  if (RENDERED < TOTAL) {
+    await loadMore();
+    while (n < CARDS.length && CARDS[n].el.classList.contains("done")) n++;
+    if (n < CARDS.length) setActive(n);
+  }
 }
 
 /* audio: play/pause the active card's local file; single shared preview player */
 const PREVIEW = new Audio();
 function stopPreview() { try { PREVIEW.pause(); } catch(_){} }
+
+// One-at-a-time: whenever ANY player starts — native controls OR our keyboard
+// shortcuts — pause every other <audio> plus the shared PREVIEW. Capture phase
+// because the media 'play' event doesn't bubble. Suppressed during "Play both".
+document.addEventListener("play", (e) => {
+  if (OVERLAY) return;
+  document.querySelectorAll("audio").forEach(a => { if (a !== e.target) { try { a.pause(); } catch(_){} } });
+  if (e.target !== PREVIEW) stopPreview();
+}, true);
+
+// Load a version's audio into the active card's compare slot: its own preview_url
+// if it has one, else an on-demand iTunes lookup; empty → the honest prompt.
+async function loadCompare(el, tags, srcLabel) {
+  const slot = el.querySelector(".compare-slot");
+  if (!slot) return;
+  const audio = slot.querySelector("audio.preview");
+  const empty = slot.querySelector(".cmp-empty");
+  const src = slot.querySelector(".cmp-src");
+  let url = (tags && tags.preview_url) || "";
+  if (!url && tags && tags.title && !DEMO) {
+    try {
+      const d = await (await fetch(`/api/preview?artist=${enc(tags.artist||"")}&title=${enc(tags.title||"")}`)).json();
+      url = d.preview_url || "";
+    } catch(_) {}
+  }
+  if (url) {
+    audio.src = url; audio.style.display = "";
+    if (empty) empty.style.display = "none";
+    if (src) src.textContent = srcLabel ? " · " + srcLabel : "";
+  } else {
+    try { audio.pause(); } catch(_){}
+    audio.removeAttribute("src"); audio.style.display = "none";
+    if (empty) empty.style.display = "";
+    if (src) src.textContent = "";
+  }
+}
+
+// Overlay local + compare at once (the "is this the same master?" check). Sets
+// OVERLAY so the mutual-pause handler doesn't stop one when the other starts.
+function playBoth(el) {
+  const local = el.querySelector("audio.local");
+  const cmp = el.querySelector("audio.preview");
+  if (!cmp || !cmp.getAttribute("src")) { toast("No compare audio loaded — pick a version first"); return; }
+  OVERLAY = true;
+  const done = () => { OVERLAY = false; };
+  try { if (local) local.play().catch(()=>{}); } catch(_){}
+  cmp.addEventListener("playing", () => setTimeout(done, 50), { once: true });
+  try { cmp.play().catch(()=>{}); } catch(_){}
+  setTimeout(done, 2000);   // fallback so OVERLAY never sticks if the preview stalls
+  toast("Playing both — Space stops the local file");
+}
 
 function toggleLocal(el) {
   const a = el.querySelector("audio.local");
@@ -1093,6 +1266,7 @@ document.addEventListener("keydown", (e) => {
     return;
   }
   switch (k) {
+    case "enter": e.preventDefault(); confirmCard(c.el); break;
     case "e": e.preventDefault(); editHighlighted(c.el); break;
     case "y": e.preventDefault(); youtube(c.el); break;
     case "u": e.preventDefault(); undoLast(); break;

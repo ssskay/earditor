@@ -1,0 +1,15 @@
+# Earditor — DEMO-only dependencies.
+#
+# `python3 review.py --demo` runs the full review UI on synthetic fixtures and
+# never fingerprints, calls an API, or touches Music.app — so it needs none of
+# the heavy/fragile fingerprinting stack (shazamio, pyacoustid, musicbrainzngs)
+# and no fpcalc binary. This is the "Try it in 60 seconds" path.
+#
+# For the real pipeline (scan.py against your own library), use requirements.txt.
+#
+# Install:  pip install -r requirements-demo.txt
+flask>=3,<4              # review UI
+mutagen>=1.47,<2         # ID3 read (tag writes are disabled in demo mode)
+requests>=2.31,<3        # iTunes Search API client (imported by the sources package)
+rapidfuzz>=3.6,<4        # fuzzy matching for the signals
+pykakasi>=2.3,<3         # Japanese -> romaji for S4

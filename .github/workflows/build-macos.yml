@@ -1,0 +1,26 @@
+name: Build macOS app
+
+on:
+  workflow_dispatch:
+  push:
+    tags: ["v*"]
+
+jobs:
+  build:
+    runs-on: macos-14
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+      - run: brew install chromaprint
+      - run: python -m pip install -r requirements.txt -r packaging/requirements-app.txt pytest
+      - run: python -m pytest -q
+      - run: python packaging/setup_app.py py2app
+      - run: ditto -c -k --keepParent dist/Earditor.app Earditor-unsigned-macOS.zip
+      - uses: actions/upload-artifact@v4
+        with:
+          name: Earditor-unsigned-macOS
+          path: Earditor-unsigned-macOS.zip
+          if-no-files-found: error

@@ -15,33 +15,56 @@ import json
 import logging
 import os
 import subprocess
+import sys
 from pathlib import Path
 
 logger = logging.getLogger("earditor.config")
 
-HERE = Path(__file__).resolve().parent
-CONFIG_PATH = HERE / "config.json"
-DB_PATH = HERE / "earditor.db"
-# The database file before the Shazamer → Earditor rename. migrate_db_filename()
-# renames it in place on first run so no processed-track history is lost.
-_LEGACY_DB_PATH = HERE / "shazamer.db"
+SOURCE_DIR = Path(__file__).resolve().parent
+
+
+def _data_dir():
+    """Return the writable directory for config, SQLite state, and logs.
+
+    Source checkouts keep their existing repo-local behavior. A frozen macOS app
+    uses Application Support so upgrades replace only the app, never user data.
+    EARDITOR_DATA_DIR is intentionally supported for tests and power users.
+    """
+    override = os.environ.get("EARDITOR_DATA_DIR")
+    if override:
+        return Path(override).expanduser().resolve()
+    if getattr(sys, "frozen", False):
+        return Path.home() / "Library" / "Application Support" / "Earditor"
+    return SOURCE_DIR
+
+
+DATA_DIR = _data_dir()
+CONFIG_PATH = Path(os.environ.get("EARDITOR_CONFIG", DATA_DIR / "config.json"))
+DB_PATH = DATA_DIR / "earditor.db"
+
+# The database name before Earditor. The first run migrates it in place without
+# ever overwriting an existing earditor.db.
+_LEGACY_DB_PATHS = (DATA_DIR / "shazamer.db",)
 
 
 def migrate_db_filename():
     """
-    One-time rename of the pre-Earditor database file (shazamer.db → earditor.db),
-    preserving all processed-track history. Never overwrites an existing earditor.db.
-    Also moves the -wal/-shm siblings so SQLite keeps any pending WAL data. Called at
-    the top of db.connect(), before any connection opens, and is a no-op afterwards.
+    One-time rename of a pre-Earditor database, preserving all processed-track
+    history. Never overwrites an existing earditor.db. Also moves the -wal/-shm
+    siblings so SQLite keeps any pending WAL data. Called before connections open.
     """
-    if DB_PATH.exists() or not _LEGACY_DB_PATH.exists():
+    DATA_DIR.mkdir(parents=True, exist_ok=True)
+    if DB_PATH.exists():
         return
-    os.rename(_LEGACY_DB_PATH, DB_PATH)
+    legacy = next((p for p in _LEGACY_DB_PATHS if p.exists()), None)
+    if not legacy:
+        return
+    os.rename(legacy, DB_PATH)
     for suffix in ("-wal", "-shm"):
-        old = HERE / f"shazamer.db{suffix}"
+        old = Path(f"{legacy}{suffix}")
         if old.exists():
-            os.rename(old, HERE / f"earditor.db{suffix}")
-    logger.info("migrated shazamer.db → earditor.db")
+            os.rename(old, Path(f"{DB_PATH}{suffix}"))
+    logger.info("migrated %s → %s", legacy.name, DB_PATH.name)
 
 # Defaults — merged under whatever config.json provides.
 # NOTE: keep everything here generic/non-personal. The real library location is
@@ -155,6 +178,8 @@ def load_config(path=CONFIG_PATH):
         try:
             user = json.loads(p.read_text(encoding="utf-8"))
             data = _deep_merge(DEFAULTS, user)
+            if data.get("playlist_name") == "Shazamer — Tagged":
+                data["playlist_name"] = DEFAULTS["playlist_name"]
         except Exception as e:
             logger.warning("Could not parse %s (%s); using defaults", path, e)
     else:

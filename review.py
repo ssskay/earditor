@@ -38,13 +38,15 @@ cfg = load_config()
 itunes = iTunesSource(delay=0)
 
 HERE = Path(__file__).resolve().parent
+RESOURCE_ROOT = Path(os.environ.get("RESOURCEPATH", HERE))
+app.template_folder = str(RESOURCE_ROOT / "templates")
 
 # Demo mode (python3 review.py --demo): loads synthetic fixtures into a throwaway
 # demo.db, writes nothing to real files or Music.app, and needs no config or keys.
 # Set in __main__ before the server starts, then read as a global by the routes.
 DEMO = False
 DEMO_DB_PATH = HERE / "demo.db"
-DEMO_FIXTURES = HERE / "demo" / "fixtures.json"
+DEMO_FIXTURES = RESOURCE_ROOT / "demo" / "fixtures.json"
 
 def _cfg_int(key, default):
     try:
@@ -109,37 +111,54 @@ def _scan_worker():
         SCAN["total"] = SCAN_QUEUE_TARGET
         SCAN["done"] = 0
         SCAN["scanned"] = 0
+    scan_args = ["--queue-target", str(SCAN_QUEUE_TARGET),
+                 "--max-files", str(SCAN_MAX_FILES)]
     try:
-        proc = subprocess.Popen(
-            [sys.executable, str(HERE / "scan.py"),
-             "--queue-target", str(SCAN_QUEUE_TARGET),
-             "--max-files", str(SCAN_MAX_FILES)],
-            cwd=str(HERE),
-        )
+        if getattr(sys, "frozen", False):
+            # A py2app bundle has no standalone scan.py to launch. Reuse the same
+            # CLI entry point in a nested worker so this thread can keep publishing
+            # live progress while the native Scan button does its work.
+            import scan
+            result = {"returncode": None}
+            scan_thread = threading.Thread(
+                target=lambda: result.update(returncode=scan.main(scan_args)),
+                daemon=True,
+            )
+            scan_thread.start()
+            proc = None
+        else:
+            proc = subprocess.Popen(
+                [sys.executable, str(HERE / "scan.py"), *scan_args],
+                cwd=str(HERE),
+            )
+            returncode = None
     except Exception as e:
         with _scan_lock:
             SCAN.update(running=False, error=str(e), finished_at=time.time())
         log.exception("Failed to launch scan subprocess: %s", e)
         return
 
-    while proc.poll() is None:
-        counts = _status_counts()
-        cards = max(0, counts.get("scanned", 0) - start_cards)
-        files = max(0, _resolved(counts) - start_resolved)
-        with _scan_lock:
-            SCAN["done"] = min(SCAN["total"], cards)
-            SCAN["scanned"] = files
-        time.sleep(1.0)
+    if proc is not None or getattr(sys, "frozen", False):
+        while ((proc is not None and proc.poll() is None) or
+               (proc is None and scan_thread.is_alive())):
+            counts = _status_counts()
+            cards = max(0, counts.get("scanned", 0) - start_cards)
+            files = max(0, _resolved(counts) - start_resolved)
+            with _scan_lock:
+                SCAN["done"] = min(SCAN["total"], cards)
+                SCAN["scanned"] = files
+            time.sleep(1.0)
+        returncode = proc.returncode if proc is not None else result["returncode"]
 
     with _scan_lock:
-        SCAN["returncode"] = proc.returncode
+        SCAN["returncode"] = returncode
         SCAN["done"] = max(0, _status_counts().get("scanned", 0) - start_cards)
         SCAN["running"] = False
         SCAN["finished_at"] = time.time()
-        if proc.returncode not in (0, None):
-            SCAN["error"] = f"scan exited with code {proc.returncode}"
+        if returncode not in (0, None):
+            SCAN["error"] = f"scan exited with code {returncode}"
     log.info("Background scan finished (returncode=%s, new cards=%s)",
-             proc.returncode, SCAN["done"])
+             returncode, SCAN["done"])
 
 
 def _scan_snapshot():
@@ -252,26 +271,72 @@ def _enrich(it):
             it["options"] = None
 
 
+def _paginate(items, offset, limit, enrich=_enrich):
+    """Slice a worst-first item list into one page.
+
+    Returns (groups, tier_counts, total). `tier_counts` and `total` span the
+    WHOLE list — independent of the slice — so the header pills stay accurate
+    across pages and the client knows when to stop. Only the page's items are
+    enriched, because the options rebuild is the expensive part and there's no
+    point paying it for cards we're not sending.
+    """
+    total = len(items)
+    tier_counts = {v: 0 for v in TIER_ORDER}
+    for it in items:
+        v = it.get("verdict")
+        if v in tier_counts:
+            tier_counts[v] += 1
+    page = items[offset:offset + limit] if limit else items[offset:]
+    for it in page:
+        enrich(it)
+    groups = {}
+    for it in page:
+        groups.setdefault(it.get("verdict"), []).append(it)
+    payload = [{"verdict": v, "items": groups[v]} for v in TIER_ORDER if groups.get(v)]
+    return payload, tier_counts, total
+
+
+def _int_arg(name, default):
+    raw = request.args.get(name)
+    if raw is None:
+        return default
+    try:
+        return max(0, int(raw))
+    except (TypeError, ValueError):
+        return default
+
+
 @app.route("/api/queue")
 def api_queue():
+    # Paged so the browser renders ~40 cards at a time, not all 2,731 at once
+    # (rendering the whole queue synchronously is what hangs Safari).
+    offset = _int_arg("offset", 0)
+    limit = _int_arg("limit", 40)   # limit=0 → return everything from offset on
     c = conn()
     # In demo, surface the ALREADY_TAGGED tier as cards too, so all five tiers are
     # visible and the "already tagged — verify & keep" review card is showcased.
     items = db.get_review_queue(c, include_tagged=DEMO)
     counts = db.count_by_status(c)
     c.close()
-    groups = {}
+    # tier_counts always span the full queue so the header pills are correct even
+    # while only one page is loaded.
+    tier_counts = {v: 0 for v in TIER_ORDER}
     for it in items:
-        _enrich(it)
-        groups.setdefault(it["verdict"], []).append(it)
-    payload = [
-        {"verdict": v, "items": groups.get(v, [])}
-        for v in TIER_ORDER if groups.get(v)
-    ]
+        if it.get("verdict") in tier_counts:
+            tier_counts[it["verdict"]] += 1
+    # Optional single-tier fetch: "accept all verified" pulls every verified item's
+    # data with ?verdict=VERIFIED&limit=0, independent of the current page.
+    vf = request.args.get("verdict")
+    if vf:
+        items = [it for it in items if it.get("verdict") == vf]
+    groups, _, total = _paginate(items, offset, limit)
     return jsonify({
-        "groups": payload,
-        "tier_counts": {v: len(groups.get(v, [])) for v in TIER_ORDER},
+        "groups": groups,
+        "tier_counts": tier_counts,
         "status_counts": counts,
+        "total": total,
+        "offset": offset,
+        "limit": limit,
     })
 
 
