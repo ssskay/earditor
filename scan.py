@@ -23,6 +23,7 @@ import sys
 import time
 from pathlib import Path
 
+import config
 from config import load_config, get_acoustid_key, DB_PATH, DATA_DIR
 from covers import is_neutral_channel
 import db
@@ -63,13 +64,43 @@ def setup_logging(verbose=False):
     return logging.getLogger("earditor.scan"), logfile
 
 
-def walk_library(music_path, extensions):
-    for dirpath, _dirs, files in os.walk(music_path):
+def walk_library(music_path, extensions, include_paths=(), exclude_paths=()):
+    """Yield audio files under music_path that pass the path filters.
+
+    Excluded directories are pruned from the walk so we never descend into them;
+    include filters are applied per-file, because an include may name a directory
+    deeper than the one currently being walked.
+    """
+    exts = tuple(extensions)
+    for dirpath, dirs, files in os.walk(music_path):
+        dirs[:] = [
+            d for d in dirs
+            if not config.dir_excluded(os.path.join(dirpath, d), music_path, exclude_paths)
+        ]
         for name in files:
             if name.startswith("."):
                 continue
-            if name.lower().endswith(tuple(extensions)):
-                yield os.path.join(dirpath, name)
+            if name.lower().endswith(exts):
+                filepath = os.path.join(dirpath, name)
+                if config.path_allowed(filepath, music_path, include_paths, exclude_paths):
+                    yield filepath
+
+
+def log_skipped_pending(conn, music_path, cfg, log):
+    """Report what the filters held back, so a short queue is never a mystery."""
+    excluded = outside = 0
+    for filepath in db.iter_pending(conn):
+        verdict = config.classify_path(
+            filepath, music_path, cfg.include_paths, cfg.exclude_paths
+        )
+        if verdict == config.EXCLUDED:
+            excluded += 1
+        elif verdict == config.OUTSIDE:
+            outside += 1
+    log.info(
+        "Skipped %d pending file(s): %d excluded by filters, %d outside music_path.",
+        excluded + outside, excluded, outside,
+    )
 
 
 def gather_evidence(filepath, shazam_src, acoustid_src, itunes_src, cfg, log):
@@ -136,7 +167,7 @@ def _sig_flag(sig):
     return {"green": "✓", "yellow": "~", "red": "✗", "neutral": "·"}.get(sig["status"], "?")
 
 
-def triage(conn, log, limit=None, chunk=500):
+def triage(conn, log, limit=None, chunk=500, predicate=None):
     """
     Fast pass: tag read only — no fingerprinting, no API calls, no delays.
 
@@ -146,7 +177,7 @@ def triage(conn, log, limit=None, chunk=500):
     count looks terrifying. After a triage run, `pending` means "files that
     actually need identifying".
     """
-    pending = db.get_pending(conn, limit=limit)
+    pending = db.get_pending(conn, limit=limit, predicate=predicate)
     log.info("Triaging %d pending file(s) — reading tags only…", len(pending))
     batch = []
     retired = messy = untagged = missing = 0
@@ -294,9 +325,26 @@ def main(argv=None):
 
     conn = db.init_db(str(DB_PATH))
 
+    # One predicate for every path into the queue: the walk, --files, triage, and
+    # pending all answer to the same filters, so an excluded folder is invisible
+    # everywhere rather than only to the scanner.
+    def allowed(filepath):
+        return config.path_allowed(
+            filepath, music_path, cfg.include_paths, cfg.exclude_paths
+        )
+
+    if cfg.include_paths or cfg.exclude_paths:
+        log.info("Path filters active — include: %s | exclude: %s",
+                 cfg.include_paths or "(all)", cfg.exclude_paths or "(none)")
+
     # Register work.
     if args.files:
-        files = [str(Path(f).resolve()) for f in args.files]
+        requested = [str(Path(f).resolve()) for f in args.files]
+        files = [f for f in requested if allowed(f)]
+        rejected = len(requested) - len(files)
+        if rejected:
+            log.warning("%d of %d --files path(s) rejected by filters/music_path",
+                        rejected, len(requested))
         added = db.add_pending_bulk(conn, files)
         log.info("Registered %d explicit file(s) (%d new)", len(files), added)
         pending = files
@@ -305,20 +353,23 @@ def main(argv=None):
             log.error("Music path does not exist: %s", music_path)
             return 1
         log.info("Walking library: %s", music_path)
-        all_files = list(walk_library(music_path, cfg.audio_extensions))
+        all_files = list(walk_library(
+            music_path, cfg.audio_extensions, cfg.include_paths, cfg.exclude_paths
+        ))
         added = db.add_pending_bulk(conn, all_files)
         log.info("Found %d audio files (%d newly registered)", len(all_files), added)
 
         if args.triage:
-            triage(conn, log, limit=args.limit)
+            triage(conn, log, limit=args.limit, predicate=allowed)
             log.info("DB status counts: %s", db.count_by_status(conn))
+            log_skipped_pending(conn, music_path, cfg, log)
             conn.close()
             return
 
         # With --queue-target we need a deep enough pool: most pending files are
         # already clean-tagged and resolve without ever producing a card.
         fetch_limit = args.max_files if args.queue_target else args.limit
-        pending = db.get_pending(conn, limit=fetch_limit)
+        pending = db.get_pending(conn, limit=fetch_limit, predicate=allowed)
 
     if args.limit:
         pending = pending[: args.limit]
@@ -364,6 +415,7 @@ def main(argv=None):
     log.info("Done. Scanned %d file(s) → %d new review card(s).", scanned, queued)
     log.info("Verdicts this run: %s", tally)
     log.info("DB status counts: %s", db.count_by_status(conn))
+    log_skipped_pending(conn, music_path, cfg, log)
     conn.close()
     return 0
 

@@ -117,7 +117,96 @@ DEFAULTS = {
     # (review option 1 with a cover signal) so covers are smart-playlist-able while
     # keeping the artist's real album/art. Set false to leave Grouping untouched.
     "stamp_cover_grouping": True,
+    # Narrow the library to part of music_path. Each entry is a directory (a
+    # trailing /** or /* is accepted and ignored); relative entries resolve against
+    # music_path. Empty include_paths means "everything under music_path".
+    # exclude_paths always wins. See docs/CONFIGURATION.md.
+    "include_paths": [],
+    "exclude_paths": [],
 }
+
+# --- path filters -----------------------------------------------------------
+# Pure functions: no disk access, no cwd dependence. Everything is compared as
+# normalized, case-folded absolute paths so the same config behaves identically
+# on case-insensitive APFS and NTFS.
+
+ALLOWED = "allowed"
+EXCLUDED = "excluded"          # matched an exclude_paths entry
+OUTSIDE = "outside"            # not under music_path at all
+
+
+def _norm(path):
+    # casefold() explicitly rather than leaning on normcase(), which is a no-op on
+    # POSIX — matching has to stay case-insensitive on macOS (APFS) and in Linux CI
+    # alike, not just on Windows.
+    expanded = os.path.expandvars(os.path.expanduser(str(path)))
+    return os.path.normcase(os.path.normpath(os.path.abspath(expanded))).casefold()
+
+
+def _norm_pattern(pattern, music_path):
+    """Normalize one filter entry: strip a trailing glob, resolve if relative."""
+    p = str(pattern).strip()
+    for suffix in ("/**", "/*", os.sep + "**", os.sep + "*"):
+        if p.endswith(suffix):
+            p = p[: -len(suffix)]
+            break
+    p = os.path.expandvars(os.path.expanduser(p))
+    if not os.path.isabs(p):
+        p = os.path.join(_norm(music_path), p)
+    return _norm(p)
+
+
+def _covers(parent, child):
+    """True if `child` is `parent` or lives anywhere beneath it.
+
+    Compares whole path components, so /lib/Keep never covers /lib/Keep Extra.
+    """
+    if child == parent:
+        return True
+    return child.startswith(parent.rstrip(os.sep) + os.sep)
+
+
+def classify_path(filepath, music_path, include_paths=(), exclude_paths=()):
+    """Return ALLOWED / EXCLUDED / OUTSIDE for one file.
+
+    music_path is an implicit include: a file outside it is OUTSIDE regardless of
+    what include_paths says, which is what makes a stale registration from an old
+    music_path fall out of the pending queue instead of being scanned.
+    """
+    f = _norm(filepath)
+    root = _norm(music_path)
+    if not _covers(root, f):
+        return OUTSIDE
+
+    for pattern in exclude_paths or ():
+        if _covers(_norm_pattern(pattern, music_path), f):
+            return EXCLUDED
+
+    includes = list(include_paths or ())
+    if not includes:
+        return ALLOWED
+    for pattern in includes:
+        p = _norm_pattern(pattern, music_path)
+        if not _covers(root, p):
+            continue  # an include pointing outside music_path is inert
+        if _covers(p, f):
+            return ALLOWED
+    return EXCLUDED
+
+
+def path_allowed(filepath, music_path, include_paths=(), exclude_paths=()):
+    """True if this file should be scanned, reviewed, and queued."""
+    return classify_path(filepath, music_path, include_paths, exclude_paths) == ALLOWED
+
+
+def dir_excluded(dirpath, music_path, exclude_paths=()):
+    """True if a directory matches exclude_paths, so os.walk can prune it.
+
+    Include filters are deliberately NOT applied here: an include may name a
+    subdirectory, so a parent that doesn't match still has to be walked.
+    """
+    d = _norm(dirpath)
+    return any(_covers(_norm_pattern(p, music_path), d) for p in exclude_paths or ())
 
 
 class Config:
@@ -158,6 +247,25 @@ class Config:
     @property
     def db_path(self):
         return str(DB_PATH)
+
+    @property
+    def include_paths(self):
+        return list(self._data.get("include_paths") or [])
+
+    @property
+    def exclude_paths(self):
+        return list(self._data.get("exclude_paths") or [])
+
+    def allows(self, filepath):
+        """True if `filepath` passes this config's path filters."""
+        return path_allowed(
+            filepath, self.music_path, self.include_paths, self.exclude_paths
+        )
+
+    def classify(self, filepath):
+        return classify_path(
+            filepath, self.music_path, self.include_paths, self.exclude_paths
+        )
 
 
 def _deep_merge(base, override):

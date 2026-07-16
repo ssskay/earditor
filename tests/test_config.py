@@ -68,3 +68,117 @@ class DataLocationTest(TestCase):
             path.write_text('{"playlist_name": "Shazamer — Tagged"}', encoding="utf-8")
             loaded = config.load_config(path)
         self.assertEqual(loaded.playlist_name, "Earditor — Tagged")
+
+
+ROOT = os.path.abspath("/lib")
+
+
+def track(*parts):
+    """An absolute track path under the fake library root."""
+    return os.path.join(ROOT, *parts)
+
+
+def allowed(path, include=(), exclude=()):
+    return config.path_allowed(path, ROOT, include, exclude)
+
+
+class PathFilterTest(TestCase):
+    """`path_allowed` is pure: no disk access, no cwd dependence."""
+
+    def test_empty_include_admits_everything_under_music_path(self):
+        self.assertTrue(allowed(track("Artist", "Album", "a.mp3")))
+
+    def test_path_outside_music_path_is_never_allowed(self):
+        outside = os.path.abspath("/elsewhere/Artist/a.mp3")
+        self.assertFalse(allowed(outside))
+        # ...not even when an include names it explicitly.
+        self.assertFalse(allowed(outside, include=[os.path.abspath("/elsewhere")]))
+
+    def test_include_admits_only_its_own_subtree(self):
+        inc = [track("Keep")]
+        self.assertTrue(allowed(track("Keep", "Album", "a.mp3"), include=inc))
+        self.assertFalse(allowed(track("Other", "Album", "a.mp3"), include=inc))
+
+    def test_include_matches_a_parent_directory_not_just_exact_path(self):
+        # The pattern names a directory; files nested any depth below it match.
+        self.assertTrue(
+            allowed(track("Keep", "Album", "Disc 1", "a.mp3"), include=[track("Keep")])
+        )
+
+    def test_sibling_with_a_shared_name_prefix_is_not_a_child(self):
+        # "/lib/Keep" must not swallow "/lib/Keep Extra".
+        self.assertFalse(
+            allowed(track("Keep Extra", "a.mp3"), include=[track("Keep")])
+        )
+
+    def test_glob_suffixes_are_stripped_from_patterns(self):
+        for pattern in (track("Keep") + "/**", track("Keep") + "/*", track("Keep")):
+            with self.subTest(pattern=pattern):
+                self.assertTrue(
+                    allowed(track("Keep", "Album", "a.mp3"), include=[pattern])
+                )
+
+    def test_exclude_wins_over_include(self):
+        self.assertFalse(
+            allowed(
+                track("Keep", "Live", "a.mp3"),
+                include=[track("Keep")],
+                exclude=[track("Keep", "Live")],
+            )
+        )
+
+    def test_exclude_applies_with_no_include_configured(self):
+        self.assertFalse(allowed(track("Podcasts", "ep.mp3"), exclude=[track("Podcasts")]))
+        self.assertTrue(allowed(track("Music", "a.mp3"), exclude=[track("Podcasts")]))
+
+    def test_matching_is_case_insensitive(self):
+        self.assertTrue(allowed(track("KEEP", "a.mp3"), include=[track("keep")]))
+        self.assertFalse(allowed(track("keep", "a.mp3"), exclude=[track("KEEP")]))
+
+    def test_relative_patterns_resolve_against_music_path(self):
+        self.assertTrue(allowed(track("Keep", "a.mp3"), include=["Keep"]))
+        self.assertFalse(allowed(track("Podcasts", "a.mp3"), exclude=["Podcasts"]) )
+
+    def test_music_path_itself_as_include_admits_the_whole_library(self):
+        self.assertTrue(allowed(track("Any", "a.mp3"), include=[ROOT]))
+
+    def test_filter_defaults_are_empty_lists(self):
+        cfg = config.load_config(Path("/nonexistent/config.json"))
+        self.assertEqual(cfg.include_paths, [])
+        self.assertEqual(cfg.exclude_paths, [])
+
+
+class PendingFilterTest(TestCase):
+    """The predicate must run BEFORE the limit, or --limit under-delivers."""
+
+    def _conn(self, td, paths):
+        conn = db.init_db(str(Path(td) / "demo.db"))
+        db.add_pending_bulk(conn, paths)
+        return conn
+
+    def test_predicate_filters_before_limit(self):
+        # 3 excluded rows sort first; a naive "LIMIT 2 then filter" returns 0.
+        paths = [
+            track("Excluded", "1.mp3"),
+            track("Excluded", "2.mp3"),
+            track("Excluded", "3.mp3"),
+            track("Keep", "4.mp3"),
+            track("Keep", "5.mp3"),
+        ]
+        with TemporaryDirectory() as td:
+            conn = self._conn(td, paths)
+            got = db.get_pending(
+                conn,
+                limit=2,
+                predicate=lambda p: allowed(p, exclude=[track("Excluded")]),
+            )
+            conn.close()
+        self.assertEqual(got, [track("Keep", "4.mp3"), track("Keep", "5.mp3")])
+
+    def test_get_pending_without_predicate_is_unchanged(self):
+        paths = [track("a.mp3"), track("b.mp3")]
+        with TemporaryDirectory() as td:
+            conn = self._conn(td, paths)
+            self.assertEqual(db.get_pending(conn), sorted(paths))
+            self.assertEqual(db.get_pending(conn, limit=1), [sorted(paths)[0]])
+            conn.close()
