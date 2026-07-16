@@ -5,8 +5,15 @@ on:
   pull_request:
 
 jobs:
+  # The core has no macOS dependency: demo deps only, no fpcalc, no Music.app.
+  # Running it on both OSes is what keeps it that way.
   test:
-    runs-on: macos-14
+    name: tests (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [macos-14, windows-latest]
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
@@ -14,4 +21,23 @@ jobs:
           python-version: "3.11"
           cache: pip
       - run: python -m pip install -r requirements-demo.txt pytest
+      - run: python -m pytest -q
+
+  # Windows packaging is only worth attempting if the real fingerprinting stack
+  # installs and imports there — shazamio's async stack and pykakasi's data files
+  # are the usual suspects. This is the cheap way to find out, before PyInstaller.
+  windows-stack:
+    name: full stack imports (windows-latest)
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+      - run: python -m pip install -r requirements.txt pytest
+      - name: Import every third-party dependency
+        run: python -c "import shazamio, acoustid, musicbrainzngs, mutagen, rapidfuzz, pykakasi, flask, requests, numpy; print('stack imports OK')"
+      - name: Import every Earditor module
+        run: python -c "import config, db, utils, verify, align, tagger, scan, review, covers, itunes_bridge; print('modules import OK')"
       - run: python -m pytest -q

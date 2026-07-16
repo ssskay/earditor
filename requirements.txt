@@ -12,7 +12,7 @@ numpy>=1.24,<3           # REQUIRED by align.py, which imports it at module scop
                          # (not lazy). Listed here explicitly even though it's also
                          # a transitive dep of shazamio, since align.py depends on it
                          # directly.
-librosa>=0.10,<0.12      # OPTIONAL: compare-player auto-alignment (lazy-imported).
-                         # Needs ffmpeg on PATH to decode MP3/M4A/AAC — brew install ffmpeg.
-                         # Everything else runs without it; auto-align just reports
-                         # "unavailable" and the manual [ ] nudge still works.
+
+# Auto-alignment (librosa) is an OPTIONAL extra — see requirements-align.txt.
+# It is deliberately not installed by default: it drags scipy/numba into the
+# packaged app, and the feature already degrades to "align n/a" without it.

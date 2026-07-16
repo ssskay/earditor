@@ -27,7 +27,7 @@ from flask import Flask, render_template, jsonify, request, send_file, abort
 
 import db
 import verify
-from config import load_config, DB_PATH
+from config import load_config, DB_PATH, __version__
 from tagger import apply_tags
 from itunes_bridge import find_track_location
 from sources.itunes import iTunesSource
@@ -252,6 +252,7 @@ def index():
     return render_template(
         "review.html",
         demo=DEMO,
+        version=__version__,
         cover_album_template=cfg.get("cover_album_template", ""),
         original_album_template=cfg.get("original_album_template", "{artist} (Originals)"),
         stamp_cover_grouping=bool(cfg.get("stamp_cover_grouping", True)))

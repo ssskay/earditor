@@ -21,6 +21,8 @@ ROOT = Path(__file__).resolve().parent.parent
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
+from config import __version__  # noqa: E402 — needs ROOT on sys.path first
+
 APP = ["packaging/app.py"]
 
 # Flask needs the template on disk at runtime; bundle the templates/ folder as a
@@ -34,7 +36,15 @@ DATA_FILES = [
 OPTIONS = {
     "argv_emulation": False,
     "iconfile": "packaging/assets/Earditor.icns",
-    "excludes": ["pytest", "_pytest", "setuptools.tests", "numpy.tests", "tkinter"],
+    # librosa is deliberately NOT bundled: it drags scipy and numba in, roughly
+    # doubling the bundle for the most fragile things to freeze. align.py
+    # lazy-imports it, so the packaged app just reports "align n/a" and the manual
+    # nudge still works. Install requirements-align.txt to run it from source.
+    "excludes": [
+        "pytest", "_pytest", "setuptools.tests", "numpy.tests", "tkinter",
+        "librosa", "scipy", "numba", "llvmlite", "soundfile", "audioread",
+        "sklearn", "matplotlib",
+    ],
     "includes": [
         "review", "verify", "utils", "covers", "tagger", "db", "config",
         "itunes_bridge", "scan", "refresh_artwork",
@@ -49,6 +59,8 @@ OPTIONS = {
         "CFBundleDisplayName": "Earditor",
         # Change to your own reverse-domain identifier before signing.
         "CFBundleIdentifier": "me.sarakay.earditor",
+        "CFBundleShortVersionString": __version__,
+        "CFBundleVersion": __version__,
         "LSMinimumSystemVersion": "12.0",
         "NSHumanReadableCopyright": "Copyright © 2026 Sara Kay. MIT licensed.",
         # Required so macOS shows a clear prompt when Earditor automates Music.app.
@@ -59,8 +71,8 @@ OPTIONS = {
 
 setup(
     name="Earditor",
-    version="0.1.0",
-    description="Evidence-based music metadata review for macOS",
+    version=__version__,
+    description="Evidence-based music metadata review",
     author="Sara Kay",
     app=APP,
     data_files=DATA_FILES,

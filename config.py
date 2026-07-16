@@ -20,6 +20,10 @@ from pathlib import Path
 
 logger = logging.getLogger("earditor.config")
 
+# Single source of truth for the version: the packaged apps and the review UI
+# footer both read it from here, and the release tag must match it (vX.Y.Z).
+__version__ = "1.0.0"
+
 SOURCE_DIR = Path(__file__).resolve().parent
 
 
