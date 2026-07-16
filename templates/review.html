@@ -198,6 +198,14 @@
   audio { width: 100%; height: 34px; }
   .noaudio { font-size: 12px; color: var(--placeholder); padding: 8px 0; }
   .cmp-src { text-transform: none; letter-spacing: 0; color: var(--ink-mute); }
+  .align-badge { font-family: var(--font-mono); font-size: 10px; margin-left: 8px;
+    padding: 1px 6px; border-radius: 4px; letter-spacing: .02em; display: none; }
+  .align-badge.show { display: inline-block; }
+  .align-badge.aligning { color: var(--ink-mute); background: var(--panel-2); }
+  .align-badge.strong { color: var(--ok); background: var(--ok-wash); }
+  .align-badge.weak   { color: var(--warn); background: var(--warn-wash); }
+  .align-badge.none   { color: var(--ink-mute); background: var(--panel-2); }
+  .align-badge.na     { color: var(--ink-mute); background: var(--panel-2); }
   .both-row { display: flex; align-items: center; gap: 10px; margin: 2px 0 4px; flex-wrap: wrap; }
   .both-row .hint { font-size: 11.5px; color: var(--ink-mute); }
   /* Pending = a version is selected but not yet written. Make Confirm the obvious next step. */
@@ -687,7 +695,7 @@ function card(item) {
   // with the matched preview if there is one; otherwise shows an honest empty
   // state (common for niche tracks Apple's catalog doesn't have).
   const compareAudio = `<div class="player compare-slot">
-      <div class="plabel">▶ Compare<span class="cmp-src hint"></span></div>
+      <div class="plabel">▶ Compare<span class="cmp-src hint"></span><span class="align-badge"></span></div>
       <audio controls preload="none" class="preview"${preview ? ` src="${esc(preview)}"` : ' style="display:none"'}></audio>
       <div class="noaudio cmp-empty"${preview ? ' style="display:none"' : ''}>No iTunes audio for this version — press <b>Y</b> for YouTube, or pick another reading below.</div>
     </div>`;
@@ -726,7 +734,7 @@ function card(item) {
       ${candHtml}
       <div class="players">${localAudio}${compareAudio}</div>
       ${DEMO ? "" : '<div class="both-row"><button class="btn ghost act-both" type="button">▶ Play both together</button><span class="hint">A/B by default — playing one pauses the other</span></div>'}
-      <div class="compare-hint">⇄ <b>X</b> cues the local file to the preview zone · <b>[</b> <b>]</b> nudge ±5s to line them up
+      <div class="compare-hint">Local auto-lines-up to the preview on select · <b>X</b> re-cues if it drifts · <b>[</b> <b>]</b> nudge ±5s to fine-tune
         ${hasOptions ? "· <b>E</b> edit the highlighted option" : ""}</div>
 
       <!-- DECISION LAST: now that the evidence is in view, choose how to tag it. -->
@@ -1019,6 +1027,58 @@ document.addEventListener("play", (e) => {
   if (e.target !== PREVIEW) stopPreview();
 }, true);
 
+// Auto-align: one in-flight request at a time; selecting another card/candidate
+// aborts the previous so rapid clicking stays smooth.
+let ALIGN_AC = null;
+
+function setBadge(el, cls, text) {
+  const b = el.querySelector(".align-badge");
+  if (!b) return;
+  b.className = "align-badge show " + cls;
+  b.textContent = text;
+}
+
+function seekLocal(el, sec) {
+  const local = el.querySelector("audio.local");
+  if (!local) return;
+  const apply = () => { local.currentTime = Math.max(0, sec); };
+  if (local.readyState >= 1) apply();
+  else { local.addEventListener("loadedmetadata", apply, { once: true }); local.load(); }
+}
+
+async function autoAlign(el, previewUrl) {
+  if (DEMO || !previewUrl) return;
+  if (ALIGN_AC) ALIGN_AC.abort();
+  ALIGN_AC = new AbortController();
+  const signal = ALIGN_AC.signal;
+  setBadge(el, "aligning", "aligning…");
+  try {
+    const r = await fetch(`/api/align?path=${enc(el.dataset.fp)}&preview=${enc(previewUrl)}`,
+                          { signal });
+    const d = await r.json();
+    if (signal.aborted) return;
+    if (d.ok) {
+      el._alignOffset = d.offset;
+      seekLocal(el, d.offset);
+      const pct = Math.round((d.confidence || 0) * 100);
+      const txt = { strong: `⇄ strong ${pct}%`, weak: `⇄ weak ${pct}%`,
+                    none: `⇄ no match` }[d.label] || "⇄";
+      setBadge(el, d.label, txt);
+    } else {
+      setBadge(el, "na", "align n/a");
+    }
+  } catch (e) {
+    if (e && e.name === "AbortError") {
+      // Superseded by a newer select — clear the spinner on the OLD card so it
+      // doesn't sit on "aligning…" forever if the user scrolls back to it.
+      const b = el.querySelector(".align-badge");
+      if (b) b.className = "align-badge";
+      return;
+    }
+    setBadge(el, "na", "align n/a");
+  }
+}
+
 // Load a version's audio into the active card's compare slot: its own preview_url
 // if it has one, else an on-demand iTunes lookup; empty → the honest prompt.
 async function loadCompare(el, tags, srcLabel) {
@@ -1038,11 +1098,14 @@ async function loadCompare(el, tags, srcLabel) {
     audio.src = url; audio.style.display = "";
     if (empty) empty.style.display = "none";
     if (src) src.textContent = srcLabel ? " · " + srcLabel : "";
+    autoAlign(el, url);                       // line up local to this preview
   } else {
     try { audio.pause(); } catch(_){}
     audio.removeAttribute("src"); audio.style.display = "none";
     if (empty) empty.style.display = "";
     if (src) src.textContent = "";
+    const b = el.querySelector(".align-badge");  // hide any stale badge
+    if (b) b.className = "align-badge";
   }
 }
 
@@ -1072,19 +1135,18 @@ function toggleLocal(el) {
   } else a.pause();
 }
 
-// iTunes previews start mid-song (Apple picks a highlight ~30% in) and the API
-// doesn't expose the offset — so cue the local file to ~30% as a starting guess,
-// then let the user nudge with [ ] to line the two up by ear.
 function cueToPreview(el) {
   const local = el.querySelector("audio.local");
   if (!local) return;
   const seek = () => {
     const d = local.duration;
-    if (d && isFinite(d)) local.currentTime = d * 0.30;
+    // Prefer the auto-aligned offset; fall back to the ~30% highlight guess.
+    if (typeof el._alignOffset === "number") local.currentTime = el._alignOffset;
+    else if (d && isFinite(d)) local.currentTime = d * 0.30;
     document.querySelectorAll("audio").forEach(a => { if (a !== local) a.pause(); });
     stopPreview();
     local.play().catch(() => toast("Can't play this file"));
-    toast("Local cued to ~30% (preview zone) — [ ] to nudge, 🔊 to A/B the preview");
+    toast("Local cued to preview zone — 🔊 to A/B, [ ] to fine-tune");
   };
   if (local.readyState >= 1) seek();
   else { local.addEventListener("loadedmetadata", seek, { once: true }); local.load(); }
