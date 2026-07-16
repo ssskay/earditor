@@ -17,10 +17,12 @@ import os
 import socket
 import subprocess
 import sys
+import tempfile
 import threading
 import time
 from pathlib import Path
 
+import requests
 from flask import Flask, render_template, jsonify, request, send_file, abort
 
 import db
@@ -404,6 +406,65 @@ def api_preview():
     title = request.args.get("title", "")
     hit = itunes.search_track(artist, title)
     return jsonify(hit or {})
+
+
+def _fetch_preview(url, timeout=10):
+    """Download an iTunes preview to a temp .m4a file. Returns the path, or None."""
+    try:
+        resp = requests.get(url, timeout=timeout,
+                            headers={"User-Agent": "Mozilla/5.0"})
+        resp.raise_for_status()
+    except Exception as e:
+        log.debug("preview download failed (%s): %s", url, e)
+        return None
+    tf = tempfile.NamedTemporaryFile(prefix="earditor_align_", suffix=".m4a", delete=False)
+    tf.write(resp.content)
+    tf.close()
+    return tf.name
+
+
+@app.route("/api/align")
+def api_align():
+    """
+    Align the local file at ?path= against the iTunes preview at ?preview= and
+    return {ok, offset, confidence, label}. Review-time aid only — nothing is
+    stored. Degrades to {ok:false, reason} on any failure so the UI can fall back
+    to the manual nudge. Off in demo mode (no real local audio).
+    """
+    import align
+    if DEMO:
+        return jsonify({"ok": False, "reason": "unavailable"})
+    path = request.args.get("path", "")
+    preview = request.args.get("preview", "")
+    c = conn()
+    track = db.get_track(c, path)
+    c.close()
+    if not track or not os.path.isfile(path):
+        return jsonify({"ok": False, "reason": "unknown_track"})
+    if not preview:
+        return jsonify({"ok": False, "reason": "no_preview"})
+    tmp = _fetch_preview(preview)
+    if not tmp:
+        return jsonify({"ok": False, "reason": "download_failed"})
+    try:
+        res = align.align_audio(path, tmp)
+    except ImportError as e:
+        log.warning("align unavailable (librosa/ffmpeg missing): %s", e)
+        return jsonify({"ok": False, "reason": "unavailable"})
+    except Exception as e:
+        log.debug("align decode failed for %s: %s", path, e)
+        return jsonify({"ok": False, "reason": "decode_failed"})
+    finally:
+        try:
+            os.remove(tmp)
+        except OSError:
+            pass
+    return jsonify({
+        "ok": True,
+        "offset": res["offset_sec"],
+        "confidence": res["confidence"],
+        "label": align.confidence_label(res["confidence"]),
+    })
 
 
 def _apply(fp, tags):
