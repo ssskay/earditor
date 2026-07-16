@@ -8,7 +8,13 @@ import sys
 import tempfile
 import unittest
 
-import numpy as np
+import pytest
+
+# numpy is a full-install dependency (requirements.txt), not a demo one: demo mode
+# never reaches align.py, which review.py lazy-imports. So skip this module rather
+# than fail collection when only requirements-demo.txt is installed — the CI
+# windows-stack job installs the real requirements and runs these for real.
+np = pytest.importorskip("numpy", reason="numpy not installed (demo-only deps)")
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 

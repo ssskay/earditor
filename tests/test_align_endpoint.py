@@ -9,6 +9,12 @@ import sys
 import unittest
 from unittest import mock
 
+import pytest
+
+# align.py imports numpy at module scope, and numpy is a full-install dependency
+# rather than a demo one — see the note in test_align.py.
+pytest.importorskip("numpy", reason="numpy not installed (demo-only deps)")
+
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 import review  # noqa: E402
