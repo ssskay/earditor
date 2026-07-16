@@ -280,7 +280,11 @@ class Config:
     @property
     def music_path(self):
         # Expand ~ and env vars so config.json can use portable paths.
-        return os.path.expanduser(os.path.expandvars(self._data["music_path"]))
+        p = os.path.expanduser(os.path.expandvars(self._data["music_path"]))
+        # expanduser keeps the entry's own separators, so "~/Sub" becomes
+        # r"C:\Users\...\Music/Sub" on Windows. normpath makes it native;
+        # the empty-string guard matters because normpath("") == ".".
+        return os.path.normpath(p) if p else p
 
     @property
     def audio_extensions(self):
