@@ -1106,6 +1106,9 @@ async function loadCompare(el, tags, srcLabel) {
     if (src) src.textContent = "";
     const b = el.querySelector(".align-badge");  // hide any stale badge
     if (b) b.className = "align-badge";
+    // Drop the offset too: it was computed for the PREVIOUS version, so leaving it
+    // would make ⇄ Cue seek this version to a spot that means nothing for it.
+    delete el._alignOffset;
   }
 }
 

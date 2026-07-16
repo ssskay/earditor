@@ -8,3 +8,7 @@ rapidfuzz>=3.6,<4        # fuzzy matching for the signals
 pykakasi>=2.3,<3         # Japanese -> romaji for S4
 flask>=3,<4              # review UI
 requests>=2.31,<3        # iTunes Search API
+librosa>=0.10,<0.12      # OPTIONAL: compare-player auto-alignment (lazy-imported).
+                         # Needs ffmpeg on PATH to decode MP3/M4A/AAC — brew install ffmpeg.
+                         # Everything else runs without it; auto-align just reports
+                         # "unavailable" and the manual [ ] nudge still works.

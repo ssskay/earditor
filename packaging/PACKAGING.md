@@ -61,6 +61,12 @@ Then zip the stapled `.app` and attach it to a GitHub Release.
 - **`fpcalc`:** AcoustID needs the Chromaprint `fpcalc` binary. Either require users to
   `brew install chromaprint`, or vendor a signed `fpcalc` into the bundle and point
   `$FPCALC` at it.
+- **`ffmpeg` (auto-align):** the compare player's auto-alignment decodes MP3/M4A/AAC via
+  librosa, which needs `ffmpeg` on PATH. Either `brew install ffmpeg` or vendor a signed
+  `ffmpeg` into the bundle. The feature is lazy-loaded — its absence only disables
+  auto-align (the badge reads "align n/a" and the manual `[` `]` nudge still works); the
+  rest of the app is unaffected. Note librosa also pulls in numpy/scipy/numba, which are
+  sizeable native deps — verify they import cleanly from the frozen bundle.
 - **AcoustID key:** still per-user via `$ACOUSTID_API_KEY` or Keychain — never bake a
   key into a distributed build.
 - **First launch:** macOS will prompt for Automation (Music) and Files-and-Folders
