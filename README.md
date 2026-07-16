@@ -90,9 +90,6 @@ evidence for everything it couldn't prove.
 
 ![An illustrative library split into verdict tiers — 48% already tagged, 31% verified, 9% likely, 7% covers, 5% unverified or no-match — answering "how much of your library can you trust?" All data shown is synthetic.](docs/assets/report-card.svg)
 
-*(Formerly known as Shazamer. Renamed because it grew from "run Shazam on my rips"
-into an evidence engine that cross-examines Shazam as just one witness among several.)*
-
 ## Two phases
 
 ```
