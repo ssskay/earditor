@@ -9,11 +9,19 @@ Then code-sign with your Developer ID and notarize for DIRECT distribution — s
 PACKAGING.md. (The Mac App Store is a poor fit: its sandbox fights the AppleScript
 control of Music.app and the arbitrary library-file access Earditor needs.)
 
-This is a starting point, not a turnkey build — expect to iterate on the includes/
-packages lists and on template bundling (see PACKAGING.md § Known wrinkles).
+Release builds still need Developer ID signing and notarization; see PACKAGING.md.
 """
 
+import sys
+from pathlib import Path
+
 from setuptools import setup
+
+ROOT = Path(__file__).resolve().parent.parent
+if str(ROOT) not in sys.path:
+    sys.path.insert(0, str(ROOT))
+
+from config import __version__  # noqa: E402 — needs ROOT on sys.path first
 
 APP = ["packaging/app.py"]
 
@@ -21,25 +29,52 @@ APP = ["packaging/app.py"]
 # resource. review.py resolves render_template("review.html") relative to itself.
 DATA_FILES = [
     ("templates", ["templates/review.html"]),
+    ("demo", ["demo/fixtures.json"]),
     ("", ["config.example.json"]),
 ]
 
+# Vendored fpcalc, so AcoustID works without `brew install chromaprint` — the #1
+# setup friction. config.ensure_fpcalc() points $FPCALC at it at startup. The build
+# workflow fetches it; without it we still build and AcoustID just stays disabled.
+# It is a Mach-O binary inside the bundle, so it must be signed along with the app
+# (the --deep sign in PACKAGING.md covers it).
+_FPCALC = ROOT / "packaging" / "vendor" / "fpcalc"
+if _FPCALC.exists():
+    DATA_FILES.append(("", [str(_FPCALC)]))
+else:
+    print("WARNING: packaging/vendor/fpcalc missing — building without AcoustID "
+          "fingerprinting. See PACKAGING.md.")
+
 OPTIONS = {
     "argv_emulation": False,
+    "iconfile": "packaging/assets/Earditor.icns",
+    # librosa is deliberately NOT bundled: it drags scipy and numba in, roughly
+    # doubling the bundle for the most fragile things to freeze. align.py
+    # lazy-imports it, so the packaged app just reports "align n/a" and the manual
+    # nudge still works. Install requirements-align.txt to run it from source.
+    "excludes": [
+        "pytest", "_pytest", "setuptools.tests", "numpy.tests", "tkinter",
+        "librosa", "scipy", "numba", "llvmlite", "soundfile", "audioread",
+        "sklearn", "matplotlib",
+    ],
     "includes": [
         "review", "verify", "utils", "covers", "tagger", "db", "config",
         "itunes_bridge", "scan", "refresh_artwork",
     ],
     "packages": [
         "flask", "jinja2", "mutagen", "rapidfuzz", "pykakasi",
-        "shazamio", "acoustid", "musicbrainzngs", "requests", "webview",
+        "shazamio", "acoustid", "musicbrainzngs", "requests",
+        "charset_normalizer", "chardet", "webview", "sources",
     ],
     "plist": {
         "CFBundleName": "Earditor",
         "CFBundleDisplayName": "Earditor",
         # Change to your own reverse-domain identifier before signing.
         "CFBundleIdentifier": "me.sarakay.earditor",
+        "CFBundleShortVersionString": __version__,
+        "CFBundleVersion": __version__,
         "LSMinimumSystemVersion": "12.0",
+        "NSHumanReadableCopyright": "Copyright © 2026 Sara Kay. MIT licensed.",
         # Required so macOS shows a clear prompt when Earditor automates Music.app.
         "NSAppleEventsUsageDescription":
             "Earditor adds tagged tracks to your Music library and refreshes their artwork.",
@@ -47,8 +82,11 @@ OPTIONS = {
 }
 
 setup(
+    name="Earditor",
+    version=__version__,
+    description="Evidence-based music metadata review",
+    author="Sara Kay",
     app=APP,
     data_files=DATA_FILES,
     options={"py2app": OPTIONS},
-    setup_requires=["py2app"],
 )

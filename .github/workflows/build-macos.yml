@@ -1,0 +1,49 @@
+name: Build macOS app
+
+on:
+  workflow_dispatch:
+  push:
+    tags: ["v*"]
+
+jobs:
+  build:
+    runs-on: macos-14
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+      - run: brew install chromaprint
+
+      # Vendor fpcalc into the bundle so users don't need Homebrew. Chromaprint's
+      # terms permit redistribution. Copied from the brew binary rather than
+      # re-downloaded, so the arch always matches the runner.
+      - name: Vendor fpcalc
+        run: |
+          mkdir -p packaging/vendor
+          cp "$(brew --prefix)/bin/fpcalc" packaging/vendor/fpcalc
+          chmod +x packaging/vendor/fpcalc
+          packaging/vendor/fpcalc -version
+
+      - run: python -m pip install -r requirements.txt -r packaging/requirements-app.txt pytest
+      - run: python -m pytest -q
+      - run: python packaging/setup_app.py py2app
+
+      # A green test suite never catches a frozen-only import error. Launch it.
+      - name: Smoke-test the frozen app
+        run: |
+          dist/Earditor.app/Contents/MacOS/Earditor --demo &
+          PID=$!
+          sleep 25
+          if ! kill -0 "$PID" 2>/dev/null; then
+            echo "Earditor exited early — likely a frozen import error"; exit 1
+          fi
+          kill "$PID"
+          echo "app launched and stayed up"
+      - run: ditto -c -k --keepParent dist/Earditor.app Earditor-unsigned-macOS.zip
+      - uses: actions/upload-artifact@v4
+        with:
+          name: Earditor-unsigned-macOS
+          path: Earditor-unsigned-macOS.zip
+          if-no-files-found: error

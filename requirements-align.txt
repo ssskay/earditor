@@ -1,0 +1,17 @@
+# Earditor — OPTIONAL: compare-player auto-alignment.
+#
+# Install on top of requirements.txt when you want the review UI to line a local
+# file up with its iTunes preview automatically:
+#     pip install -r requirements.txt -r requirements-align.txt
+#
+# Also needs **ffmpeg** on PATH to decode MP3/M4A/AAC:
+#     macOS:  brew install ffmpeg
+#     Linux:  apt install ffmpeg
+#
+# Without either, /api/align reports "unavailable", the badge reads "align n/a",
+# and the manual [ ] nudge still works — nothing else is affected. align.py
+# lazy-imports librosa precisely so this stays optional.
+#
+# It is NOT bundled into the packaged apps: librosa pulls in scipy and numba,
+# which roughly double the bundle and are the most fragile things to freeze.
+librosa>=0.10,<0.12

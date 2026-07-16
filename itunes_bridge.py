@@ -12,8 +12,7 @@ import subprocess
 logger = logging.getLogger("earditor.itunes_bridge")
 
 DEFAULT_PLAYLIST = "Earditor — Tagged"
-# The playlist name before the Shazamer → Earditor rename. If it still exists and the
-# new one doesn't, we rename it in place (below) so its tracks are preserved.
+# Name used before Earditor. Rename it in place so its tracks remain intact.
 LEGACY_PLAYLIST = "Shazamer — Tagged"
 
 
@@ -73,7 +72,7 @@ def refresh_and_add_to_playlist(filepath, playlist_name=DEFAULT_PLAYLIST, art_fi
         try
             if not (exists playlist "{pl}") then
                 if (exists playlist "{legacy}") then
-                    -- rename the pre-Earditor playlist so its tracks are preserved
+                    -- rename the legacy playlist; preserve its tracks
                     set name of playlist "{legacy}" to "{pl}"
                 else
                     make new playlist with properties {{name:"{pl}"}}

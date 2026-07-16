@@ -15,33 +15,103 @@ import json
 import logging
 import os
 import subprocess
+import sys
 from pathlib import Path
 
 logger = logging.getLogger("earditor.config")
 
-HERE = Path(__file__).resolve().parent
-CONFIG_PATH = HERE / "config.json"
-DB_PATH = HERE / "earditor.db"
-# The database file before the Shazamer → Earditor rename. migrate_db_filename()
-# renames it in place on first run so no processed-track history is lost.
-_LEGACY_DB_PATH = HERE / "shazamer.db"
+# Single source of truth for the version: the packaged apps and the review UI
+# footer both read it from here, and the release tag must match it (vX.Y.Z).
+__version__ = "1.0.0"
+
+SOURCE_DIR = Path(__file__).resolve().parent
+
+
+def _data_dir():
+    """Return the writable directory for config, SQLite state, and logs.
+
+    Source checkouts keep their existing repo-local behavior. A frozen macOS app
+    uses Application Support so upgrades replace only the app, never user data.
+    EARDITOR_DATA_DIR is intentionally supported for tests and power users.
+    """
+    override = os.environ.get("EARDITOR_DATA_DIR")
+    if override:
+        return Path(override).expanduser().resolve()
+    if getattr(sys, "frozen", False):
+        if sys.platform == "darwin":
+            return Path.home() / "Library" / "Application Support" / "Earditor"
+        if sys.platform == "win32":
+            # %APPDATA% is the roaming profile; fall back to the literal path for
+            # the rare stripped environment where the variable is missing.
+            base = os.environ.get("APPDATA") or (Path.home() / "AppData" / "Roaming")
+            return Path(base) / "Earditor"
+        return Path(
+            os.environ.get("XDG_DATA_HOME") or (Path.home() / ".local" / "share")
+        ) / "Earditor"
+    return SOURCE_DIR
+
+
+def resource_root():
+    """Directory holding bundled read-only resources (templates/, demo/, fpcalc).
+
+    py2app exports $RESOURCEPATH; PyInstaller unpacks to sys._MEIPASS; a source
+    checkout is just the source directory. Distinct from _data_dir(), which is
+    writable state — resources are replaced wholesale by an upgrade, state is not.
+    """
+    env = os.environ.get("RESOURCEPATH")
+    if env:
+        return Path(env)
+    meipass = getattr(sys, "_MEIPASS", None)
+    if meipass:
+        return Path(meipass)
+    return SOURCE_DIR
+
+
+def ensure_fpcalc():
+    """Point $FPCALC at the vendored binary when one shipped with the app.
+
+    Chromaprint's fpcalc is the #1 setup friction — vendoring it means a packaged
+    user never installs anything. An explicit $FPCALC always wins, and a source
+    checkout with fpcalc on PATH is unaffected. Returns the path used, or None.
+    """
+    if os.environ.get("FPCALC"):
+        return os.environ["FPCALC"]
+    name = "fpcalc.exe" if sys.platform == "win32" else "fpcalc"
+    candidate = resource_root() / name
+    if candidate.exists():
+        os.environ["FPCALC"] = str(candidate)
+        logger.debug("using vendored fpcalc: %s", candidate)
+        return str(candidate)
+    return None
+
+
+DATA_DIR = _data_dir()
+CONFIG_PATH = Path(os.environ.get("EARDITOR_CONFIG", DATA_DIR / "config.json"))
+DB_PATH = DATA_DIR / "earditor.db"
+
+# The database name before Earditor. The first run migrates it in place without
+# ever overwriting an existing earditor.db.
+_LEGACY_DB_PATHS = (DATA_DIR / "shazamer.db",)
 
 
 def migrate_db_filename():
     """
-    One-time rename of the pre-Earditor database file (shazamer.db → earditor.db),
-    preserving all processed-track history. Never overwrites an existing earditor.db.
-    Also moves the -wal/-shm siblings so SQLite keeps any pending WAL data. Called at
-    the top of db.connect(), before any connection opens, and is a no-op afterwards.
+    One-time rename of a pre-Earditor database, preserving all processed-track
+    history. Never overwrites an existing earditor.db. Also moves the -wal/-shm
+    siblings so SQLite keeps any pending WAL data. Called before connections open.
     """
-    if DB_PATH.exists() or not _LEGACY_DB_PATH.exists():
+    DATA_DIR.mkdir(parents=True, exist_ok=True)
+    if DB_PATH.exists():
         return
-    os.rename(_LEGACY_DB_PATH, DB_PATH)
+    legacy = next((p for p in _LEGACY_DB_PATHS if p.exists()), None)
+    if not legacy:
+        return
+    os.rename(legacy, DB_PATH)
     for suffix in ("-wal", "-shm"):
-        old = HERE / f"shazamer.db{suffix}"
+        old = Path(f"{legacy}{suffix}")
         if old.exists():
-            os.rename(old, HERE / f"earditor.db{suffix}")
-    logger.info("migrated shazamer.db → earditor.db")
+            os.rename(old, Path(f"{DB_PATH}{suffix}"))
+    logger.info("migrated %s → %s", legacy.name, DB_PATH.name)
 
 # Defaults — merged under whatever config.json provides.
 # NOTE: keep everything here generic/non-personal. The real library location is
@@ -94,7 +164,100 @@ DEFAULTS = {
     # (review option 1 with a cover signal) so covers are smart-playlist-able while
     # keeping the artist's real album/art. Set false to leave Grouping untouched.
     "stamp_cover_grouping": True,
+    # Ask Music.app to refresh each accepted track and add it to playlist_name.
+    # macOS only — forced off everywhere else (see Config.music_app_integration),
+    # where Earditor runs files-only: tags and cover art are still written to disk.
+    "music_app_integration": True,
+    # Narrow the library to part of music_path. Each entry is a directory (a
+    # trailing /** or /* is accepted and ignored); relative entries resolve against
+    # music_path. Empty include_paths means "everything under music_path".
+    # exclude_paths always wins. See docs/CONFIGURATION.md.
+    "include_paths": [],
+    "exclude_paths": [],
 }
+
+# --- path filters -----------------------------------------------------------
+# Pure functions: no disk access, no cwd dependence. Everything is compared as
+# normalized, case-folded absolute paths so the same config behaves identically
+# on case-insensitive APFS and NTFS.
+
+ALLOWED = "allowed"
+EXCLUDED = "excluded"          # matched an exclude_paths entry
+OUTSIDE = "outside"            # not under music_path at all
+
+
+def _norm(path):
+    # casefold() explicitly rather than leaning on normcase(), which is a no-op on
+    # POSIX — matching has to stay case-insensitive on macOS (APFS) and in Linux CI
+    # alike, not just on Windows.
+    expanded = os.path.expandvars(os.path.expanduser(str(path)))
+    return os.path.normcase(os.path.normpath(os.path.abspath(expanded))).casefold()
+
+
+def _norm_pattern(pattern, music_path):
+    """Normalize one filter entry: strip a trailing glob, resolve if relative."""
+    p = str(pattern).strip()
+    for suffix in ("/**", "/*", os.sep + "**", os.sep + "*"):
+        if p.endswith(suffix):
+            p = p[: -len(suffix)]
+            break
+    p = os.path.expandvars(os.path.expanduser(p))
+    if not os.path.isabs(p):
+        p = os.path.join(_norm(music_path), p)
+    return _norm(p)
+
+
+def _covers(parent, child):
+    """True if `child` is `parent` or lives anywhere beneath it.
+
+    Compares whole path components, so /lib/Keep never covers /lib/Keep Extra.
+    """
+    if child == parent:
+        return True
+    return child.startswith(parent.rstrip(os.sep) + os.sep)
+
+
+def classify_path(filepath, music_path, include_paths=(), exclude_paths=()):
+    """Return ALLOWED / EXCLUDED / OUTSIDE for one file.
+
+    music_path is an implicit include: a file outside it is OUTSIDE regardless of
+    what include_paths says, which is what makes a stale registration from an old
+    music_path fall out of the pending queue instead of being scanned.
+    """
+    f = _norm(filepath)
+    root = _norm(music_path)
+    if not _covers(root, f):
+        return OUTSIDE
+
+    for pattern in exclude_paths or ():
+        if _covers(_norm_pattern(pattern, music_path), f):
+            return EXCLUDED
+
+    includes = list(include_paths or ())
+    if not includes:
+        return ALLOWED
+    for pattern in includes:
+        p = _norm_pattern(pattern, music_path)
+        if not _covers(root, p):
+            continue  # an include pointing outside music_path is inert
+        if _covers(p, f):
+            return ALLOWED
+    return EXCLUDED
+
+
+def path_allowed(filepath, music_path, include_paths=(), exclude_paths=()):
+    """True if this file should be scanned, reviewed, and queued."""
+    return classify_path(filepath, music_path, include_paths, exclude_paths) == ALLOWED
+
+
+def dir_excluded(dirpath, music_path, exclude_paths=()):
+    """True if a directory matches exclude_paths, so os.walk can prune it.
+
+    Include filters are deliberately NOT applied here: an include may name a
+    subdirectory, so a parent that doesn't match still has to be walked.
+    """
+    d = _norm(dirpath)
+    return any(_covers(_norm_pattern(p, music_path), d) for p in exclude_paths or ())
 
 
 class Config:
@@ -136,6 +299,36 @@ class Config:
     def db_path(self):
         return str(DB_PATH)
 
+    @property
+    def music_app_integration(self):
+        """True only where a Music.app actually exists to talk to.
+
+        The platform check wins over config.json: setting it true on Windows would
+        otherwise mean every accept pays an osascript timeout to accomplish nothing.
+        """
+        if sys.platform != "darwin":
+            return False
+        return bool(self._data.get("music_app_integration", True))
+
+    @property
+    def include_paths(self):
+        return list(self._data.get("include_paths") or [])
+
+    @property
+    def exclude_paths(self):
+        return list(self._data.get("exclude_paths") or [])
+
+    def allows(self, filepath):
+        """True if `filepath` passes this config's path filters."""
+        return path_allowed(
+            filepath, self.music_path, self.include_paths, self.exclude_paths
+        )
+
+    def classify(self, filepath):
+        return classify_path(
+            filepath, self.music_path, self.include_paths, self.exclude_paths
+        )
+
 
 def _deep_merge(base, override):
     out = dict(base)
@@ -155,6 +348,8 @@ def load_config(path=CONFIG_PATH):
         try:
             user = json.loads(p.read_text(encoding="utf-8"))
             data = _deep_merge(DEFAULTS, user)
+            if data.get("playlist_name") == "Shazamer — Tagged":
+                data["playlist_name"] = DEFAULTS["playlist_name"]
         except Exception as e:
             logger.warning("Could not parse %s (%s); using defaults", path, e)
     else:
@@ -162,11 +357,20 @@ def load_config(path=CONFIG_PATH):
     return Config(data)
 
 
+def music_app_enabled(cfg=None):
+    """Module-level form of Config.music_app_integration, for callers without a cfg."""
+    if sys.platform != "darwin":
+        return False
+    if cfg is None:
+        cfg = load_config()
+    return bool(cfg.get("music_app_integration", True))
+
+
 def get_acoustid_key():
     """
     Resolve the AcoustID API key without ever persisting it.
 
-    Order: $ACOUSTID_API_KEY, then macOS Keychain (service 'acoustid').
+    Order: $ACOUSTID_API_KEY, then (macOS only) the Keychain, service 'acoustid'.
     Also honors $FPCALC by leaving it in the environment for pyacoustid.
     Returns the key string, or None if unavailable (caller degrades gracefully).
     """
@@ -174,18 +378,24 @@ def get_acoustid_key():
     if key:
         return key.strip()
 
-    try:
-        result = subprocess.run(
-            ["security", "find-generic-password", "-s", "acoustid", "-w"],
-            capture_output=True, text=True, timeout=5,
-        )
-        if result.returncode == 0:
-            key = result.stdout.strip()
-            if key:
-                logger.debug("AcoustID key loaded from Keychain")
-                return key
-    except Exception as e:
-        logger.debug("Keychain lookup for acoustid failed: %s", e)
+    if sys.platform == "darwin":
+        try:
+            result = subprocess.run(
+                ["security", "find-generic-password", "-s", "acoustid", "-w"],
+                capture_output=True, text=True, timeout=5,
+            )
+            if result.returncode == 0:
+                key = result.stdout.strip()
+                if key:
+                    logger.debug("AcoustID key loaded from Keychain")
+                    return key
+        except Exception as e:
+            logger.debug("Keychain lookup for acoustid failed: %s", e)
+        source = "env or Keychain"
+    else:
+        # No Keychain to consult off macOS — naming it in the warning would send
+        # Windows users hunting for a thing that isn't there.
+        source = "$ACOUSTID_API_KEY"
 
-    logger.warning("No AcoustID API key found (env or Keychain); AcoustID disabled")
+    logger.warning("No AcoustID API key found (%s); AcoustID disabled", source)
     return None

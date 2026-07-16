@@ -254,6 +254,12 @@ def main():
     logging.basicConfig(level=logging.DEBUG if args.verbose else logging.INFO,
                         format="%(levelname)-7s %(message)s")
 
+    if sys.platform != "darwin":
+        log.error("refresh_artwork.py pushes art into Music.app through AppleScript "
+                  "and only runs on macOS. Elsewhere the art is already embedded in "
+                  "the file itself — no refresh is needed.")
+        return 2
+
     cfg = load_config()
     album_re = _uploader_album_re(cfg)
     if args.files:

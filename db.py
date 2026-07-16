@@ -12,6 +12,8 @@ import json
 import logging
 import sqlite3
 import time
+from itertools import islice
+from pathlib import Path
 
 import config
 
@@ -76,9 +78,10 @@ def _now():
 
 def connect(db_path):
     global _migrated
-    # Rename the pre-Earditor db file (shazamer.db → earditor.db) before opening,
-    # so 11k+ processed tracks carry over instead of starting from an empty DB.
-    config.migrate_db_filename()
+    # Only the real application database participates in name migration. Demo and
+    # test databases must never mutate a user's local state as a side effect.
+    if Path(db_path).resolve() == config.DB_PATH.resolve():
+        config.migrate_db_filename()
     conn = sqlite3.connect(db_path, timeout=30)
     conn.row_factory = sqlite3.Row
     conn.execute("PRAGMA journal_mode=WAL")
@@ -132,11 +135,27 @@ def add_pending_bulk(conn, filepaths):
     return conn.total_changes - before
 
 
-def get_pending(conn, limit=None):
+def iter_pending(conn):
+    """Every pending filepath, unfiltered — for whole-queue summaries."""
     q = "SELECT filepath FROM tracks WHERE status = 'pending' ORDER BY filepath"
+    for row in conn.execute(q):
+        yield row["filepath"]
+
+
+def get_pending(conn, limit=None, predicate=None):
+    """Pending filepaths, `predicate`-filtered and then capped at `limit`.
+
+    The predicate has to run in Python rather than SQL (path filters aren't
+    expressible as a WHERE clause), and it MUST run before the limit: filtering a
+    LIMITed page instead would silently return fewer than `limit` rows whenever
+    the excluded paths happen to sort first.
+    """
+    rows = iter_pending(conn)
+    if predicate is not None:
+        rows = (fp for fp in rows if predicate(fp))
     if limit:
-        q += f" LIMIT {int(limit)}"
-    return [r["filepath"] for r in conn.execute(q)]
+        rows = islice(rows, int(limit))
+    return list(rows)
 
 
 def count_by_status(conn):

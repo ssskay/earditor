@@ -35,6 +35,10 @@ venv/
 # internal handoff prompt (not for the public repo)
 RENAME_HANDOFF.md
 LAUNCH_HANDOFF.md
+DEPLOY_HANDOFF.md
+
+# vendored build binaries (fpcalc) — fetched by the build workflow, never committed
+packaging/vendor/
 
 # working docs with real library data (not for the public repo)
 private/

@@ -1,10 +1,18 @@
 # Earditor — install with: pip3 install --break-system-packages -r requirements.txt
 # fpcalc (Chromaprint) must be on PATH — brew install chromaprint
-shazamio            # async Shazam fingerprinting (NOT the dead ShazamAPI)
-pyacoustid          # AcoustID fingerprint + lookup (needs fpcalc)
-musicbrainzngs      # MusicBrainz enrichment
-mutagen             # ID3 read/write + duration
-rapidfuzz           # fuzzy matching for the signals
-pykakasi            # Japanese -> romaji for S4
-flask               # review UI
-requests            # iTunes Search API
+shazamio>=0.8,<0.9       # async Shazam fingerprinting (NOT the dead ShazamAPI)
+pyacoustid>=1.3,<2       # AcoustID fingerprint + lookup (needs fpcalc)
+musicbrainzngs>=0.7,<1   # MusicBrainz enrichment
+mutagen>=1.47,<2         # ID3 read/write + duration
+rapidfuzz>=3.6,<4        # fuzzy matching for the signals
+pykakasi>=2.3,<3         # Japanese -> romaji for S4
+flask>=3,<4              # review UI
+requests>=2.31,<3        # iTunes Search API
+numpy>=1.24,<3           # REQUIRED by align.py, which imports it at module scope
+                         # (not lazy). Listed here explicitly even though it's also
+                         # a transitive dep of shazamio, since align.py depends on it
+                         # directly.
+
+# Auto-alignment (librosa) is an OPTIONAL extra — see requirements-align.txt.
+# It is deliberately not installed by default: it drags scipy/numba into the
+# packaged app, and the feature already degrades to "align n/a" without it.

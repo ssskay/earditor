@@ -12,6 +12,35 @@ you exactly which metadata it can prove — and which it can't. **Proof, not gue
 
 ![How Earditor verifies a file: three independent witnesses (Shazam, AcoustID + MusicBrainz, iTunes) plus the file's own evidence are scored into six signals and resolved to a verdict tier. All data shown is synthetic.](docs/assets/pipeline.svg)
 
+## Download or run from source
+
+Earditor remains local by design, but it does not have to *feel* like a localhost
+project. The distributable build is a native app — a normal window and Dock/taskbar
+icon wrapping the same review engine. The loopback server is an internal
+implementation detail; it never listens beyond `127.0.0.1`, and the database and
+settings live outside the app (`~/Library/Application Support/Earditor` on macOS,
+`%APPDATA%\Earditor` on Windows) so upgrades do not replace them.
+
+**macOS — `Earditor.app`.** Signed with a Developer ID and notarized, so Gatekeeper
+treats it like a real downloaded Mac app. Tagged builds come from the **Build macOS
+app** workflow; its unsigned artifact is useful for smoke-testing, but a public
+Release should use the notarized zip described in
+[`packaging/PACKAGING.md`](packaging/PACKAGING.md).
+
+**Windows — `Earditor-windows.zip`.** Unzip anywhere and run `Earditor.exe`. Two
+things to know:
+
+- It is **unsigned** (a Windows code-signing certificate is out of scope for v1), so
+  SmartScreen shows *"Windows protected your PC"* on first launch — click
+  **More info → Run anyway**.
+- It needs the **WebView2 runtime**, preinstalled on Windows 11. On Windows 10, grab
+  the [Evergreen installer](https://developer.microsoft.com/microsoft-edge/webview2/)
+  if the window doesn't appear.
+- Windows runs **files-only** (no Music.app) and has no auto-align in v1 — the badge
+  reads "align n/a" and the manual `[` `]` nudge still works.
+
+Running from source is fully supported on all three platforms — see below.
+
 ## Try it in 60 seconds
 
 No config, no API keys, no music of your own. `--demo` loads a small **synthetic**
@@ -21,8 +50,9 @@ review experience with zero setup:
 ```bash
 git clone https://github.com/ssskay/earditor.git
 cd earditor
-pip install -r requirements.txt
-python3 review.py --demo          # opens http://127.0.0.1:5001
+python3 -m venv .venv && source .venv/bin/activate   # keeps macOS's system Python untouched
+pip install -r requirements-demo.txt                 # no fingerprinting deps or fpcalc
+python3 review.py --demo                             # opens http://127.0.0.1:5001
 ```
 
 ![The Earditor review UI running in demo mode: a source-conflict card where Shazam and AcoustID name different artists, with the source-agreement row, four exact-tag option buttons, and the S1–S6 evidence chips. All data shown is synthetic.](docs/assets/review-ui.png)
@@ -30,9 +60,11 @@ python3 review.py --demo          # opens http://127.0.0.1:5001
 In demo mode nothing is written to disk or to Music.app — accepting a track just
 advances the queue. Every tier is represented, including the tricky ones.
 
-> **macOS only.** Earditor tags files in your **Music.app** library, which it controls
-> through AppleScript, and reads its AcoustID key from the macOS Keychain. It is not
-> cross-platform.
+> **Platforms.** Earditor scans, verifies, reviews, and tags your files on **macOS,
+> Windows, and Linux**. The **Music.app integration is macOS-only** — elsewhere it runs
+> files-only: accepting still writes tags and embeds cover art into the file itself, but
+> nothing is added to a Music.app playlist. Full matrix in
+> [docs/CONFIGURATION.md](docs/CONFIGURATION.md#platform-support).
 
 ## Who this is for
 
@@ -104,7 +136,7 @@ API (catalog + album + art + 30s preview + duration), and the file itself
 - **UNVERIFIED** — signals conflict or nothing corroborates. **No proposed tags.** Candidates shown side-by-side; you pick or edit.
 - **COVER** — cover keyword, or folder is a different artist while the title matches. Proposes title from Shazam, **artist = folder/uploader**, album blank. (Only when the title is trustworthy — a cover keyword on a wrong-song fingerprint falls to UNVERIFIED instead.)
 - **LIKELY** — iTunes + duration + (filename or folder) agree, but no independent fingerprint agreement. Reviewed individually.
-- **VERIFIED** — S1 **and** S3 pass, no cover flags. Eligible for one-click batch-accept. *(Requires a working AcoustID key — see below.)*
+- **VERIFIED** — S1 **and** S3 pass with no cover flags, **or** an official "— Topic" channel confirms the artist. Eligible for one-click batch-accept. *(The S1 path uses a free AcoustID key — optional, see below; the Topic-channel path needs no key, so Shazam-only libraries still reach VERIFIED.)*
 - **NO_MATCH** — no fingerprint anywhere. Recorded so it's never rescanned.
 
 Album name and artwork always come from **iTunes** (canonical, 1200×1200) when the
@@ -115,12 +147,14 @@ beats wrong.
 
 ## Setup
 
-**Requirements:** macOS with the **Music app** (Earditor drives it via AppleScript and
-reads the macOS Keychain — it is macOS-only, not cross-platform), **Python 3.10+**, and
-**Homebrew** (for the `fpcalc` fingerprinting binary).
+**Requirements:** **Python 3.10+**, and `fpcalc` from **Chromaprint** (only needed for
+the optional AcoustID second fingerprint). macOS additionally gets the Music.app
+integration; on Windows and Linux Earditor runs files-only.
 
 ```bash
-brew install chromaprint             # provides fpcalc (required for AcoustID)
+brew install chromaprint             # macOS — provides fpcalc
+# Windows: download Chromaprint and point $FPCALC at fpcalc.exe
+# Linux:   apt install libchromaprint-tools
 
 python3 -m venv .venv                 # isolated environment (recommended)
 source .venv/bin/activate
@@ -133,23 +167,44 @@ cp config.example.json config.json   # then edit music_path for your machine
 > Avoid `--break-system-packages` unless you know you want it.
 
 `config.json` holds your library path and is **gitignored** — it never leaves your
-machine. Everything configurable lives there (see `config.example.json` for the full
-set of keys); nothing personal is hardcoded in the source. If `config.json` is absent
-the app falls back to sensible defaults (`~/Music` for the library path).
+machine. Everything configurable lives there; nothing personal is hardcoded in the
+source. If `config.json` is absent the app falls back to sensible defaults (`~/Music`
+for the library path).
 
-### AcoustID API key (required for the VERIFIED tier)
+> 📖 **[docs/CONFIGURATION.md](docs/CONFIGURATION.md)** documents every config key and
+> every `scan.py` flag, plus the `<Artist>/<Album>/track` layout Earditor expects, how
+> to point it at a non-Music.app library, and how to narrow a scan with
+> [path filters](docs/CONFIGURATION.md#path-filters).
 
-The S1 signal needs a valid **AcoustID application API key**, read at runtime from
-`$ACOUSTID_API_KEY` or the macOS Keychain (service `acoustid`) — **never written to
-disk**. Get a free key at <https://acoustid.org/new-application>, then:
+### AcoustID API key — optional
+
+**Earditor runs on Shazam alone.** AcoustID is an *optional second fingerprint* — an
+independent Chromaprint → MusicBrainz lookup whose only job is to cross-check Shazam
+and catch the rare "confidently wrong song." It powers the **S1** signal and unlocks
+the **VERIFIED** tier's one-click batch-accept. It is **not** required to use Earditor.
+
+**Without a key — Shazam-only.** The full pipeline still runs: Shazam + iTunes +
+duration + filename + folder. Solid matches land in **LIKELY** (reviewed individually),
+official "— Topic" channels still reach **VERIFIED**, and covers/re-uploads are still
+detected. Make it explicit with:
+
+```bash
+python3 scan.py --no-acoustid
+```
+
+**With a key — recommended for large or obscure libraries.** A second independent
+fingerprint lets whole swaths of your library reach **VERIFIED** and batch-accept in
+one click — most worth it when you have thousands of files, or deep cuts Shazam
+sometimes mishears. The key is **free** and **never written to disk** (read at runtime
+from `$ACOUSTID_API_KEY` or the macOS Keychain, service `acoustid`). Get an
+*application* key at <https://acoustid.org/new-application>, then:
 
 ```bash
 security add-generic-password -s acoustid -a "$USER" -w <YOUR_KEY> -U
 ```
 
-Without a valid key the pipeline still runs and degrades gracefully (S1 unavailable →
-nothing reaches VERIFIED, everything caps at LIKELY). If the stored key is rejected,
-scan.py logs a loud warning and disables AcoustID for the run.
+If a stored key is rejected, `scan.py` logs a loud warning and falls back to
+Shazam-only for that run — nothing breaks.
 
 ## Usage
 
@@ -159,6 +214,7 @@ python3 scan.py                 # scan all pending files
 python3 scan.py --limit 10      # scan the next 10 (good for a first look)
 python3 scan.py --queue-target 25   # scan until 25 tracks reach the review queue
 python3 scan.py --files a.mp3   # scan specific files
+python3 scan.py --no-acoustid   # Shazam-only: skip the optional AcoustID second fingerprint
 python3 scan.py -v              # DEBUG logging (per-signal breakdown)
 python3 review.py               # open the review UI
 
@@ -270,8 +326,10 @@ Local-only (gitignored, never committed): `config.json`, `earditor.db`, `demo.db
 
 Everything lives in `earditor.db` (`tracks` table). No more `exclude.csv` +
 `last_index`. To start a scan over: `rm earditor.db && python3 migrate_v3.py`.
-(Upgrading from a Shazamer install? The first run renames an existing `shazamer.db`
-to `earditor.db` automatically — nothing is rescanned.)
+(Upgrading from Shazamer? The first run renames an existing `shazamer.db` to
+`earditor.db` automatically — nothing is rescanned.) In the native app, state
+lives outside the app bundle under
+`~/Library/Application Support/Earditor`, so replacing the app cannot replace it.
 
 **This folder is fully self-contained.** If you're migrating from an earlier version,
 its "already-processed" list can be merged (deduped, absolute paths) into a local

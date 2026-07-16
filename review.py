@@ -17,15 +17,18 @@ import os
 import socket
 import subprocess
 import sys
+import tempfile
 import threading
 import time
 from pathlib import Path
 
+import requests
 from flask import Flask, render_template, jsonify, request, send_file, abort
 
+import config
 import db
 import verify
-from config import load_config, DB_PATH
+from config import load_config, DB_PATH, DATA_DIR, __version__
 from tagger import apply_tags
 from itunes_bridge import find_track_location
 from sources.itunes import iTunesSource
@@ -38,13 +41,18 @@ cfg = load_config()
 itunes = iTunesSource(delay=0)
 
 HERE = Path(__file__).resolve().parent
+# Resolves $RESOURCEPATH (py2app), sys._MEIPASS (PyInstaller), or the source dir.
+RESOURCE_ROOT = config.resource_root()
+app.template_folder = str(RESOURCE_ROOT / "templates")
 
 # Demo mode (python3 review.py --demo): loads synthetic fixtures into a throwaway
 # demo.db, writes nothing to real files or Music.app, and needs no config or keys.
 # Set in __main__ before the server starts, then read as a global by the routes.
 DEMO = False
-DEMO_DB_PATH = HERE / "demo.db"
-DEMO_FIXTURES = HERE / "demo" / "fixtures.json"
+# DATA_DIR, not HERE: in a packaged app HERE is inside the read-only bundle. For a
+# source checkout the two are the same path, so this changes nothing there.
+DEMO_DB_PATH = DATA_DIR / "demo.db"
+DEMO_FIXTURES = RESOURCE_ROOT / "demo" / "fixtures.json"
 
 def _cfg_int(key, default):
     try:
@@ -109,37 +117,54 @@ def _scan_worker():
         SCAN["total"] = SCAN_QUEUE_TARGET
         SCAN["done"] = 0
         SCAN["scanned"] = 0
+    scan_args = ["--queue-target", str(SCAN_QUEUE_TARGET),
+                 "--max-files", str(SCAN_MAX_FILES)]
     try:
-        proc = subprocess.Popen(
-            [sys.executable, str(HERE / "scan.py"),
-             "--queue-target", str(SCAN_QUEUE_TARGET),
-             "--max-files", str(SCAN_MAX_FILES)],
-            cwd=str(HERE),
-        )
+        if getattr(sys, "frozen", False):
+            # A py2app bundle has no standalone scan.py to launch. Reuse the same
+            # CLI entry point in a nested worker so this thread can keep publishing
+            # live progress while the native Scan button does its work.
+            import scan
+            result = {"returncode": None}
+            scan_thread = threading.Thread(
+                target=lambda: result.update(returncode=scan.main(scan_args)),
+                daemon=True,
+            )
+            scan_thread.start()
+            proc = None
+        else:
+            proc = subprocess.Popen(
+                [sys.executable, str(HERE / "scan.py"), *scan_args],
+                cwd=str(HERE),
+            )
+            returncode = None
     except Exception as e:
         with _scan_lock:
             SCAN.update(running=False, error=str(e), finished_at=time.time())
         log.exception("Failed to launch scan subprocess: %s", e)
         return
 
-    while proc.poll() is None:
-        counts = _status_counts()
-        cards = max(0, counts.get("scanned", 0) - start_cards)
-        files = max(0, _resolved(counts) - start_resolved)
-        with _scan_lock:
-            SCAN["done"] = min(SCAN["total"], cards)
-            SCAN["scanned"] = files
-        time.sleep(1.0)
+    if proc is not None or getattr(sys, "frozen", False):
+        while ((proc is not None and proc.poll() is None) or
+               (proc is None and scan_thread.is_alive())):
+            counts = _status_counts()
+            cards = max(0, counts.get("scanned", 0) - start_cards)
+            files = max(0, _resolved(counts) - start_resolved)
+            with _scan_lock:
+                SCAN["done"] = min(SCAN["total"], cards)
+                SCAN["scanned"] = files
+            time.sleep(1.0)
+        returncode = proc.returncode if proc is not None else result["returncode"]
 
     with _scan_lock:
-        SCAN["returncode"] = proc.returncode
+        SCAN["returncode"] = returncode
         SCAN["done"] = max(0, _status_counts().get("scanned", 0) - start_cards)
         SCAN["running"] = False
         SCAN["finished_at"] = time.time()
-        if proc.returncode not in (0, None):
-            SCAN["error"] = f"scan exited with code {proc.returncode}"
+        if returncode not in (0, None):
+            SCAN["error"] = f"scan exited with code {returncode}"
     log.info("Background scan finished (returncode=%s, new cards=%s)",
-             proc.returncode, SCAN["done"])
+             returncode, SCAN["done"])
 
 
 def _scan_snapshot():
@@ -211,7 +236,10 @@ def api_undo():
             return jsonify({"ok": False, "error": "nothing to undo"}), 400
         new_fp = fp
         applied = res.get("applied") or {}
-        if not os.path.isfile(fp) and applied.get("title"):
+        # Only Music.app relocates files behind our back, so the re-point lookup is
+        # only meaningful when it's in play. Without it the stored path IS the path.
+        if (cfg.music_app_integration and not os.path.isfile(fp)
+                and applied.get("title")):
             loc = find_track_location(applied.get("title"), applied.get("artist"))
             if loc and os.path.isfile(loc):
                 db.relocate(c, fp, loc)
@@ -228,6 +256,7 @@ def index():
     return render_template(
         "review.html",
         demo=DEMO,
+        version=__version__,
         cover_album_template=cfg.get("cover_album_template", ""),
         original_album_template=cfg.get("original_album_template", "{artist} (Originals)"),
         stamp_cover_grouping=bool(cfg.get("stamp_cover_grouping", True)))
@@ -238,7 +267,10 @@ def _enrich(it):
     scenario options (§1) to an item. Options are recomputed from the stored
     evidence when a row predates option persistence, so old and new rows render
     identically from the one canonical builder in verify.py."""
-    parts = (it.get("filepath") or "").split("/")
+    # Normalize separators before splitting, as utils.raw_folder_name does: a
+    # Windows path has no "/" to split on, which would silently blank the uploader
+    # folder — and the folder IS the uploader identity behind S6 and the Topic hint.
+    parts = (it.get("filepath") or "").replace("\\", "/").split("/")
     raw_folder = parts[-3] if len(parts) >= 3 else ""
     if not it.get("folder_name"):
         it["folder_name"] = raw_folder or None
@@ -252,26 +284,72 @@ def _enrich(it):
             it["options"] = None
 
 
+def _paginate(items, offset, limit, enrich=_enrich):
+    """Slice a worst-first item list into one page.
+
+    Returns (groups, tier_counts, total). `tier_counts` and `total` span the
+    WHOLE list — independent of the slice — so the header pills stay accurate
+    across pages and the client knows when to stop. Only the page's items are
+    enriched, because the options rebuild is the expensive part and there's no
+    point paying it for cards we're not sending.
+    """
+    total = len(items)
+    tier_counts = {v: 0 for v in TIER_ORDER}
+    for it in items:
+        v = it.get("verdict")
+        if v in tier_counts:
+            tier_counts[v] += 1
+    page = items[offset:offset + limit] if limit else items[offset:]
+    for it in page:
+        enrich(it)
+    groups = {}
+    for it in page:
+        groups.setdefault(it.get("verdict"), []).append(it)
+    payload = [{"verdict": v, "items": groups[v]} for v in TIER_ORDER if groups.get(v)]
+    return payload, tier_counts, total
+
+
+def _int_arg(name, default):
+    raw = request.args.get(name)
+    if raw is None:
+        return default
+    try:
+        return max(0, int(raw))
+    except (TypeError, ValueError):
+        return default
+
+
 @app.route("/api/queue")
 def api_queue():
+    # Paged so the browser renders ~40 cards at a time, not all 2,731 at once
+    # (rendering the whole queue synchronously is what hangs Safari).
+    offset = _int_arg("offset", 0)
+    limit = _int_arg("limit", 40)   # limit=0 → return everything from offset on
     c = conn()
     # In demo, surface the ALREADY_TAGGED tier as cards too, so all five tiers are
     # visible and the "already tagged — verify & keep" review card is showcased.
     items = db.get_review_queue(c, include_tagged=DEMO)
     counts = db.count_by_status(c)
     c.close()
-    groups = {}
+    # tier_counts always span the full queue so the header pills are correct even
+    # while only one page is loaded.
+    tier_counts = {v: 0 for v in TIER_ORDER}
     for it in items:
-        _enrich(it)
-        groups.setdefault(it["verdict"], []).append(it)
-    payload = [
-        {"verdict": v, "items": groups.get(v, [])}
-        for v in TIER_ORDER if groups.get(v)
-    ]
+        if it.get("verdict") in tier_counts:
+            tier_counts[it["verdict"]] += 1
+    # Optional single-tier fetch: "accept all verified" pulls every verified item's
+    # data with ?verdict=VERIFIED&limit=0, independent of the current page.
+    vf = request.args.get("verdict")
+    if vf:
+        items = [it for it in items if it.get("verdict") == vf]
+    groups, _, total = _paginate(items, offset, limit)
     return jsonify({
-        "groups": payload,
-        "tier_counts": {v: len(groups.get(v, [])) for v in TIER_ORDER},
+        "groups": groups,
+        "tier_counts": tier_counts,
         "status_counts": counts,
+        "total": total,
+        "offset": offset,
+        "limit": limit,
     })
 
 
@@ -341,6 +419,69 @@ def api_preview():
     return jsonify(hit or {})
 
 
+def _fetch_preview(url, timeout=10):
+    """Download an iTunes preview to a temp .m4a file. Returns the path, or None."""
+    try:
+        resp = requests.get(url, timeout=timeout,
+                            headers={"User-Agent": "Mozilla/5.0"})
+        resp.raise_for_status()
+    except Exception as e:
+        log.debug("preview download failed (%s): %s", url, e)
+        return None
+    tf = tempfile.NamedTemporaryFile(prefix="earditor_align_", suffix=".m4a", delete=False)
+    tf.write(resp.content)
+    tf.close()
+    return tf.name
+
+
+@app.route("/api/align")
+def api_align():
+    """
+    Align the local file at ?path= against the iTunes preview at ?preview= and
+    return {ok, offset, confidence, label}. Review-time aid only — nothing is
+    stored. Degrades to {ok:false, reason} on any failure so the UI can fall back
+    to the manual nudge. Off in demo mode (no real local audio).
+    """
+    if DEMO:
+        return jsonify({"ok": False, "reason": "unavailable"})
+    try:
+        import align
+    except ImportError as e:
+        log.warning("align unavailable (numpy/librosa/ffmpeg missing): %s", e)
+        return jsonify({"ok": False, "reason": "unavailable"})
+    path = request.args.get("path", "")
+    preview = request.args.get("preview", "")
+    c = conn()
+    track = db.get_track(c, path)
+    c.close()
+    if not track or not os.path.isfile(path):
+        return jsonify({"ok": False, "reason": "unknown_track"})
+    if not preview:
+        return jsonify({"ok": False, "reason": "no_preview"})
+    tmp = _fetch_preview(preview)
+    if not tmp:
+        return jsonify({"ok": False, "reason": "download_failed"})
+    try:
+        res = align.align_audio(path, tmp)
+    except ImportError as e:
+        log.warning("align unavailable (librosa/ffmpeg missing): %s", e)
+        return jsonify({"ok": False, "reason": "unavailable"})
+    except Exception as e:
+        log.debug("align decode failed for %s: %s", path, e)
+        return jsonify({"ok": False, "reason": "decode_failed"})
+    finally:
+        try:
+            os.remove(tmp)
+        except OSError:
+            pass
+    return jsonify({
+        "ok": True,
+        "offset": res["offset_sec"],
+        "confidence": res["confidence"],
+        "label": align.confidence_label(res["confidence"]),
+    })
+
+
 def _apply(fp, tags):
     # Demo mode writes NOTHING to disk or Music.app — it just advances the queue so
     # a stranger can click through the whole flow safely. No tags, no AppleScript.
@@ -364,7 +505,9 @@ def api_accept():
     if not fp or not tags.get("title"):
         return jsonify({"ok": False, "error": "missing filepath or title"}), 400
     ok = _apply(fp, tags)
-    return jsonify({"ok": ok, "demo": DEMO})
+    # music_app tells the UI which toast to show: a plain "tagged" reads as a
+    # failure to anyone who expects the track to appear in their playlist.
+    return jsonify({"ok": ok, "demo": DEMO, "music_app": cfg.music_app_integration})
 
 
 @app.route("/api/batch_accept", methods=["POST"])
@@ -437,6 +580,26 @@ def load_demo_fixtures():
     return len(rows)
 
 
+def enable_demo():
+    """Point the whole app at a throwaway demo DB and load the fixtures.
+
+    Lives here rather than in __main__ so the packaged app (packaging/app.py) can
+    reach it too — `--demo` is the support answer for "is it broken or is it my
+    setup?", which means it has to work identically in the shipped app.
+
+    Returns the number of synthetic tracks loaded. Raises FileNotFoundError when
+    the fixtures weren't bundled.
+    """
+    global DEMO, DB_PATH
+    if not DEMO_FIXTURES.exists():
+        raise FileNotFoundError(DEMO_FIXTURES)
+    DEMO = True
+    DB_PATH = DEMO_DB_PATH        # route the whole app at the throwaway DB
+    _reset_demo_db()
+    db.init_db(str(DB_PATH))
+    return load_demo_fixtures()
+
+
 if __name__ == "__main__":
     ap = argparse.ArgumentParser(description="Earditor review UI")
     ap.add_argument("--demo", action="store_true",
@@ -448,15 +611,12 @@ if __name__ == "__main__":
     args = ap.parse_args()
 
     if args.demo:
-        if not DEMO_FIXTURES.exists():
+        try:
+            n = enable_demo()
+        except FileNotFoundError:
             log.error("Demo fixtures missing at %s — run: python3 demo/build_fixtures.py",
                       DEMO_FIXTURES)
             sys.exit(1)
-        DEMO = True
-        DB_PATH = DEMO_DB_PATH        # route the whole app at the throwaway DB
-        _reset_demo_db()
-        db.init_db(str(DB_PATH))
-        n = load_demo_fixtures()
         log.info("★ DEMO MODE — %d synthetic tracks loaded. No real files or Music.app "
                  "are touched; accepting writes nothing.", n)
     else:
