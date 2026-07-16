@@ -33,17 +33,21 @@ jobs:
       - run: python -m pytest -q
       - run: python packaging/setup_app.py py2app
 
-      # A green test suite never catches a frozen-only import error. Launch it.
+      # A green test suite never catches a frozen-only import error. Launch it and
+      # require an HTTP answer: a live PID is NOT proof of life — py2app's crash
+      # dialog keeps a dead app's process running, which masked a real launch crash.
       - name: Smoke-test the frozen app
         run: |
           dist/Earditor.app/Contents/MacOS/Earditor --demo &
           PID=$!
-          sleep 25
-          if ! kill -0 "$PID" 2>/dev/null; then
-            echo "Earditor exited early — likely a frozen import error"; exit 1
-          fi
-          kill "$PID"
-          echo "app launched and stayed up"
+          for i in $(seq 1 30); do
+            sleep 2
+            if curl -sf http://127.0.0.1:5001/ | grep -qi earditor; then
+              echo "app serves the review UI"; kill "$PID"; exit 0
+            fi
+          done
+          echo "app never answered on :5001 — launch crash or frozen import error"
+          kill "$PID" 2>/dev/null; exit 1
       - run: ditto -c -k --keepParent dist/Earditor.app Earditor-unsigned-macOS.zip
       - uses: actions/upload-artifact@v4
         with:

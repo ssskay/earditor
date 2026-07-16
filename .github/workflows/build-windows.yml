@@ -44,10 +44,19 @@ jobs:
           $exe = "dist/Earditor/Earditor.exe"
           if (-not (Test-Path $exe)) { throw "build produced no exe" }
           $p = Start-Process $exe -ArgumentList "--demo" -PassThru
-          Start-Sleep -Seconds 25
-          if ($p.HasExited) { throw "Earditor.exe exited early (code $($p.ExitCode)) — likely a frozen import error" }
-          Stop-Process -Id $p.Id -Force
-          Write-Host "exe launched and stayed up"
+          # Require an HTTP answer — a live PID is not proof of life (a crash
+          # dialog or lingering window keeps a dead app's process running).
+          $ok = $false
+          foreach ($i in 1..30) {
+            Start-Sleep -Seconds 2
+            try {
+              $r = Invoke-WebRequest -Uri "http://127.0.0.1:5001/" -UseBasicParsing -TimeoutSec 2
+              if ($r.Content -match "(?i)earditor") { $ok = $true; break }
+            } catch {}
+          }
+          Stop-Process -Id $p.Id -Force -ErrorAction SilentlyContinue
+          if (-not $ok) { throw "exe never answered on :5001 — launch crash or frozen import error" }
+          Write-Host "exe serves the review UI"
 
       - name: Zip
         shell: pwsh

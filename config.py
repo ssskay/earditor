@@ -36,19 +36,26 @@ def _data_dir():
     """
     override = os.environ.get("EARDITOR_DATA_DIR")
     if override:
-        return Path(override).expanduser().resolve()
-    if getattr(sys, "frozen", False):
+        d = Path(override).expanduser().resolve()
+    elif getattr(sys, "frozen", False):
         if sys.platform == "darwin":
-            return Path.home() / "Library" / "Application Support" / "Earditor"
-        if sys.platform == "win32":
+            d = Path.home() / "Library" / "Application Support" / "Earditor"
+        elif sys.platform == "win32":
             # %APPDATA% is the roaming profile; fall back to the literal path for
             # the rare stripped environment where the variable is missing.
             base = os.environ.get("APPDATA") or (Path.home() / "AppData" / "Roaming")
-            return Path(base) / "Earditor"
-        return Path(
-            os.environ.get("XDG_DATA_HOME") or (Path.home() / ".local" / "share")
-        ) / "Earditor"
-    return SOURCE_DIR
+            d = Path(base) / "Earditor"
+        else:
+            d = Path(
+                os.environ.get("XDG_DATA_HOME") or (Path.home() / ".local" / "share")
+            ) / "Earditor"
+    else:
+        return SOURCE_DIR
+    # A frozen app's data dir doesn't exist on first launch, and demo mode
+    # deliberately skips the DB-migration path that used to be the only mkdir —
+    # sqlite cannot create a database inside a directory that isn't there.
+    d.mkdir(parents=True, exist_ok=True)
+    return d
 
 
 def resource_root():
