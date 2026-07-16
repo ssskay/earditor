@@ -46,9 +46,11 @@ python3 review.py --demo                             # opens http://127.0.0.1:50
 In demo mode nothing is written to disk or to Music.app — accepting a track just
 advances the queue. Every tier is represented, including the tricky ones.
 
-> **macOS only.** Earditor tags files in your **Music.app** library, which it controls
-> through AppleScript, and reads its AcoustID key from the macOS Keychain. It is not
-> cross-platform.
+> **Platforms.** Earditor scans, verifies, reviews, and tags your files on **macOS,
+> Windows, and Linux**. The **Music.app integration is macOS-only** — elsewhere it runs
+> files-only: accepting still writes tags and embeds cover art into the file itself, but
+> nothing is added to a Music.app playlist. Full matrix in
+> [docs/CONFIGURATION.md](docs/CONFIGURATION.md#platform-support).
 
 ## Who this is for
 
@@ -131,12 +133,14 @@ beats wrong.
 
 ## Setup
 
-**Requirements:** macOS with the **Music app** (Earditor drives it via AppleScript and
-reads the macOS Keychain — it is macOS-only, not cross-platform), **Python 3.10+**, and
-**Homebrew** (for the `fpcalc` fingerprinting binary).
+**Requirements:** **Python 3.10+**, and `fpcalc` from **Chromaprint** (only needed for
+the optional AcoustID second fingerprint). macOS additionally gets the Music.app
+integration; on Windows and Linux Earditor runs files-only.
 
 ```bash
-brew install chromaprint             # provides fpcalc (required for AcoustID)
+brew install chromaprint             # macOS — provides fpcalc
+# Windows: download Chromaprint and point $FPCALC at fpcalc.exe
+# Linux:   apt install libchromaprint-tools
 
 python3 -m venv .venv                 # isolated environment (recommended)
 source .venv/bin/activate
@@ -149,9 +153,14 @@ cp config.example.json config.json   # then edit music_path for your machine
 > Avoid `--break-system-packages` unless you know you want it.
 
 `config.json` holds your library path and is **gitignored** — it never leaves your
-machine. Everything configurable lives there (see `config.example.json` for the full
-set of keys); nothing personal is hardcoded in the source. If `config.json` is absent
-the app falls back to sensible defaults (`~/Music` for the library path).
+machine. Everything configurable lives there; nothing personal is hardcoded in the
+source. If `config.json` is absent the app falls back to sensible defaults (`~/Music`
+for the library path).
+
+> 📖 **[docs/CONFIGURATION.md](docs/CONFIGURATION.md)** documents every config key and
+> every `scan.py` flag, plus the `<Artist>/<Album>/track` layout Earditor expects, how
+> to point it at a non-Music.app library, and how to narrow a scan with
+> [path filters](docs/CONFIGURATION.md#path-filters).
 
 ### AcoustID API key — optional
 

@@ -1,7 +1,10 @@
 {
-  "_comment": "Copy this file to config.json and edit music_path for your machine. config.json is gitignored so your library location stays local. The AcoustID API key is NEVER stored here — it is read from $ACOUSTID_API_KEY or the macOS Keychain (service 'acoustid').",
+  "_comment": "Copy this file to config.json and edit music_path for your machine. config.json is gitignored so your library location stays local. The AcoustID API key is NEVER stored here — it is read from $ACOUSTID_API_KEY or the macOS Keychain (service 'acoustid'). Every key is documented in docs/CONFIGURATION.md.",
   "music_path": "~/Music/Music/Media.localized/Music",
   "audio_extensions": [".mp3", ".m4a", ".flac", ".wav", ".aac"],
+  "_comment_filters": "Narrow the library without moving files. Entries are directories, relative to music_path or absolute; a trailing /** or /* is optional. exclude_paths always wins; matching is case-insensitive. Empty include_paths means all of music_path. See docs/CONFIGURATION.md#path-filters.",
+  "include_paths": [],
+  "exclude_paths": [],
   "thresholds": {
     "fuzzy_match": 85,
     "duration_pct": 0.10,
@@ -16,6 +19,8 @@
   "use_llm_tiebreaker": false,
   "llm_model": "qwen2.5:7b",
   "playlist_name": "Earditor — Tagged",
+  "_comment_music_app": "macOS only — forced off on Windows/Linux, where Earditor still writes tags and embeds art but adds nothing to a playlist.",
+  "music_app_integration": true,
   "cover_album_template": "{artist} (Covers)",
   "original_album_template": "{artist} (Originals)",
   "stamp_cover_grouping": true,
