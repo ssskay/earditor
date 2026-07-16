@@ -7,10 +7,10 @@ API doesn't say where. We compute a chromagram of each (chroma survives EQ/bitra
 master differences that would break raw-waveform correlation), slide the preview's
 chroma over the local file's, and report the best offset + a match confidence.
 
-This module is the pure-numpy core; the decode layer (chroma_of/align_audio) lands in
-a later task. librosa will be imported lazily inside chroma_of, so importing this
-module never requires librosa or ffmpeg — callers degrade gracefully when the decode
-stack is absent.
+The pure-numpy core (find_offset/confidence_label) and the decode layer
+(chroma_of/align_audio) both live in this module. librosa is imported lazily inside
+chroma_of, so importing this module never requires librosa or ffmpeg — callers
+degrade gracefully when the decode stack is absent.
 """
 
 import logging

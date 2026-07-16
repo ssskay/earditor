@@ -1048,6 +1048,16 @@ function seekLocal(el, sec) {
 
 async function autoAlign(el, previewUrl) {
   if (DEMO || !previewUrl) return;
+  // Invalidate any offset from a previous align on this card immediately — a
+  // stale _alignOffset must never survive into a new attempt, even a failed or
+  // still-in-flight one (⇄ Cue reads it while this request is pending).
+  delete el._alignOffset;
+  // Per-card sequence token: governs which call owns this card's badge/offset.
+  // ALIGN_AC below still aborts the previous in-flight request (keeps the "one
+  // align at a time" cost property), but abort ordering/microtask timing can let
+  // a superseded call's catch-branch run after the new call already set the
+  // badge — the seq check is what actually decides who's allowed to touch it.
+  const seq = (el._alignSeq = (el._alignSeq || 0) + 1);
   if (ALIGN_AC) ALIGN_AC.abort();
   ALIGN_AC = new AbortController();
   const signal = ALIGN_AC.signal;
@@ -1056,7 +1066,7 @@ async function autoAlign(el, previewUrl) {
     const r = await fetch(`/api/align?path=${enc(el.dataset.fp)}&preview=${enc(previewUrl)}`,
                           { signal });
     const d = await r.json();
-    if (signal.aborted) return;
+    if (el._alignSeq !== seq) return;   // superseded — don't touch this card
     if (d.ok) {
       el._alignOffset = d.offset;
       seekLocal(el, d.offset);
@@ -1068,9 +1078,11 @@ async function autoAlign(el, previewUrl) {
       setBadge(el, "na", "align n/a");
     }
   } catch (e) {
+    if (el._alignSeq !== seq) return;   // superseded — don't touch this card
     if (e && e.name === "AbortError") {
-      // Superseded by a newer select — clear the spinner on the OLD card so it
-      // doesn't sit on "aligning…" forever if the user scrolls back to it.
+      // Superseded by a newer select on a DIFFERENT card (same card is already
+      // handled by the seq check above) — clear the spinner on the OLD card so
+      // it doesn't sit on "aligning…" forever if the user scrolls back to it.
       const b = el.querySelector(".align-badge");
       if (b) b.className = "align-badge";
       return;

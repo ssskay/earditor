@@ -431,8 +431,12 @@ def api_align():
     stored. Degrades to {ok:false, reason} on any failure so the UI can fall back
     to the manual nudge. Off in demo mode (no real local audio).
     """
-    import align
     if DEMO:
+        return jsonify({"ok": False, "reason": "unavailable"})
+    try:
+        import align
+    except ImportError as e:
+        log.warning("align unavailable (numpy/librosa/ffmpeg missing): %s", e)
         return jsonify({"ok": False, "reason": "unavailable"})
     path = request.args.get("path", "")
     preview = request.args.get("preview", "")

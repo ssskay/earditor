@@ -78,6 +78,18 @@ class AlignEndpointTest(unittest.TestCase):
             review.DEMO = False
         self.assertEqual(r.get_json(), {"ok": False, "reason": "unavailable"})
 
+    def test_align_import_failure_is_unavailable(self):
+        # Simulates a demo install where numpy (and therefore align.py, which
+        # imports it at module scope) isn't installed: `import align` itself must
+        # raise ImportError, not just align_audio(). sys.modules["align"] = None
+        # makes `import align` raise ImportError without touching real numpy state.
+        sys.modules["align"] = None
+        self.addCleanup(lambda: sys.modules.__setitem__("align", align))
+        with mock.patch.object(review.db, "get_track", return_value={"filepath": "/x.mp3"}), \
+             mock.patch.object(review.os.path, "isfile", return_value=True):
+            r = self._get()
+        self.assertEqual(r.get_json(), {"ok": False, "reason": "unavailable"})
+
 
 if __name__ == "__main__":
     unittest.main()
