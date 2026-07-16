@@ -15,17 +15,31 @@ you exactly which metadata it can prove — and which it can't. **Proof, not gue
 ## Download or run from source
 
 Earditor remains local by design, but it does not have to *feel* like a localhost
-project. The distributable build is a native **Earditor.app**: a normal macOS window
-and Dock app wrapping the same review engine. The loopback server is an internal
+project. The distributable build is a native app — a normal window and Dock/taskbar
+icon wrapping the same review engine. The loopback server is an internal
 implementation detail; it never listens beyond `127.0.0.1`, and the database and
-settings live in `~/Library/Application Support/Earditor` so app upgrades do not
-replace them.
+settings live outside the app (`~/Library/Application Support/Earditor` on macOS,
+`%APPDATA%\Earditor` on Windows) so upgrades do not replace them.
 
-Tagged GitHub builds are produced by the **Build macOS app** workflow. Its unsigned
-artifact is useful for smoke-testing; a public GitHub Release should use the
-Developer ID–signed and notarized zip described in
-[`packaging/PACKAGING.md`](packaging/PACKAGING.md), so Gatekeeper treats it like a
-real downloaded Mac app. Running from source remains fully supported below.
+**macOS — `Earditor.app`.** Signed with a Developer ID and notarized, so Gatekeeper
+treats it like a real downloaded Mac app. Tagged builds come from the **Build macOS
+app** workflow; its unsigned artifact is useful for smoke-testing, but a public
+Release should use the notarized zip described in
+[`packaging/PACKAGING.md`](packaging/PACKAGING.md).
+
+**Windows — `Earditor-windows.zip`.** Unzip anywhere and run `Earditor.exe`. Two
+things to know:
+
+- It is **unsigned** (a Windows code-signing certificate is out of scope for v1), so
+  SmartScreen shows *"Windows protected your PC"* on first launch — click
+  **More info → Run anyway**.
+- It needs the **WebView2 runtime**, preinstalled on Windows 11. On Windows 10, grab
+  the [Evergreen installer](https://developer.microsoft.com/microsoft-edge/webview2/)
+  if the window doesn't appear.
+- Windows runs **files-only** (no Music.app) and has no auto-align in v1 — the badge
+  reads "align n/a" and the manual `[` `]` nudge still works.
+
+Running from source is fully supported on all three platforms — see below.
 
 ## Try it in 60 seconds
 
