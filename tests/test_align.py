@@ -5,6 +5,7 @@ the core alignment logic is fully testable with synthetic chroma arrays.
 """
 import os
 import sys
+import tempfile
 import unittest
 
 import numpy as np
@@ -12,6 +13,13 @@ import numpy as np
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from align import find_offset, confidence_label  # noqa: E402
+
+try:
+    import soundfile as _sf   # librosa dep; present when the decode stack is installed
+    import librosa as _lb      # noqa: F401
+    _HAVE_AUDIO = True
+except Exception:
+    _HAVE_AUDIO = False
 
 
 def one_hot_chroma(pitches):
@@ -81,6 +89,34 @@ class ConfidenceLabelTest(unittest.TestCase):
         self.assertEqual(confidence_label(0.5), "weak")
         self.assertEqual(confidence_label(0.4), "weak")
         self.assertEqual(confidence_label(0.1), "none")
+
+
+def _tone_sequence(pitches_hz, sr=22050, seg=0.5):
+    """Concatenate pure tones so the chromagram has real, varying structure."""
+    out = []
+    for f in pitches_hz:
+        t = np.linspace(0, seg, int(sr * seg), endpoint=False)
+        out.append(0.5 * np.sin(2 * np.pi * f * t))
+    return np.concatenate(out)
+
+
+@unittest.skipUnless(_HAVE_AUDIO, "librosa/soundfile not installed")
+class AlignAudioTest(unittest.TestCase):
+    def test_recovers_offset_from_wav_excerpt(self):
+        from align import align_audio
+        sr = 22050
+        full = _tone_sequence([220, 277, 330, 392, 440, 494, 523, 587], sr=sr)
+        # excerpt = seconds 1.5..3.5 of the full signal (offset should be ~1.5s)
+        start = int(1.5 * sr)
+        excerpt = full[start:start + int(2.0 * sr)]
+        with tempfile.TemporaryDirectory() as d:
+            fp_full = os.path.join(d, "full.wav")
+            fp_part = os.path.join(d, "part.wav")
+            _sf.write(fp_full, full, sr)
+            _sf.write(fp_part, excerpt, sr)
+            res = align_audio(fp_full, fp_part, sr=sr)
+        self.assertAlmostEqual(res["offset_sec"], 1.5, delta=0.3)
+        self.assertGreater(res["confidence"], 0.5)
 
 
 if __name__ == "__main__":

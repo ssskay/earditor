@@ -67,3 +67,27 @@ def confidence_label(confidence):
     if confidence >= WEAK_THRESHOLD:
         return "weak"
     return "none"
+
+
+def chroma_of(source, sr=22050, hop=512):
+    """
+    Decode `source` (a file path or file-like) to mono at `sr` and return its
+    12-bin chromagram, shape (12, n_frames). librosa (and, for MP3/M4A/AAC, ffmpeg)
+    are required here and imported lazily — callers should catch ImportError/other
+    decode errors and degrade to "align unavailable".
+    """
+    import librosa
+    y, _sr = librosa.load(source, sr=sr, mono=True)
+    return librosa.feature.chroma_cqt(y=y, sr=sr, hop_length=hop)
+
+
+def align_audio(local_path, preview_source, sr=22050, hop=512):
+    """
+    Align `preview_source` inside `local_path`. Returns
+    {"offset_sec": float, "confidence": float}. Raises on decode failure (caller
+    handles). offset_sec is where in the local file the preview begins.
+    """
+    ref = chroma_of(local_path, sr=sr, hop=hop)
+    query = chroma_of(preview_source, sr=sr, hop=hop)
+    offset_frames, confidence = find_offset(ref, query)
+    return {"offset_sec": offset_frames * hop / sr, "confidence": confidence}
