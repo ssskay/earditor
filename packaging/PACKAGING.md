@@ -48,18 +48,39 @@ notarize the final zip first.
 
 ## 3. Sign + notarize (needs your Apple Developer ID)
 
-```bash
-# Set your reverse-domain id in setup_app.py first (CFBundleIdentifier).
-codesign --deep --force --options runtime \
-  --sign "Developer ID Application: YOUR NAME (TEAMID)" dist/Earditor.app
+Use **`packaging/release_macos.sh`** — the whole pipeline, in the order that
+actually works. A plain `codesign --deep` is not enough for a bundled Python app:
+every nested `.so`/`.dylib` needs its own signature with a secure timestamp, so
+the script signs inside-out, then smoke-tests the hardened bundle over HTTP
+before spending a notarization round-trip on it.
 
-ditto -c -k --keepParent dist/Earditor.app Earditor.zip
-xcrun notarytool submit Earditor.zip \
-  --apple-id "you@example.com" --team-id TEAMID --wait
-xcrun stapler staple dist/Earditor.app
+```bash
+# 1. Tag, and let CI build the unsigned bundle.
+git tag v1.0.1 && git push --tags
+
+# 2. Unzip that run's macOS artifact into the work dir.
+mkdir -p dist/release && cd dist/release
+unzip ~/Downloads/Earditor-unsigned-macOS.zip        # → Earditor.app
+cd -
+
+# 3. Sign → verify → smoke-test → notarize → staple → re-zip.
+packaging/release_macos.sh                            # → dist/release/Earditor-macOS.zip
+
+# 4. Publish both artifacts.
+gh release create v1.0.1 dist/release/Earditor-macOS.zip Earditor-windows.zip
 ```
 
-Then zip the stapled `.app` and attach it to a GitHub Release.
+One-time setup: a *Developer ID Application* certificate in your login keychain
+(override the identity with `$EARDITOR_SIGN_IDENTITY`), and a stored notarytool
+profile named `earditor-notary`:
+
+```bash
+xcrun notarytool store-credentials earditor-notary \
+  --apple-id "you@example.com" --team-id TEAMID --password <app-specific-password>
+```
+
+Entitlements live in `packaging/entitlements.plist` — the hardened runtime needs
+them because the bundled interpreter loads its own extension modules.
 
 ## 4. Build for Windows
 
@@ -93,7 +114,8 @@ friction. Both builds vendor it — Chromaprint's terms permit redistribution:
 
 - **macOS:** the build workflow copies it from the Homebrew binary (so the arch
   matches the runner) into `packaging/vendor/fpcalc`. It's a Mach-O binary inside the
-  bundle, so it must be signed with the app — the `--deep` sign in §3 covers it.
+  bundle, so it needs its own signature — `release_macos.sh` (§3) signs every
+  executable Mach-O under `Resources/` for exactly this reason.
 - **Windows:** the build workflow downloads the official Chromaprint release zip into
   `packaging/vendor/fpcalc.exe`.
 
@@ -115,6 +137,12 @@ disabled, exactly as it does from source without a key.
   under py2app's Resources directory. The in-app Scan button calls the bundled scan
   entry point directly; it does not depend on a loose `scan.py` file.
 - **`fpcalc`:** vendored into both builds — see [Vendored `fpcalc`](#vendored-fpcalc).
+- **App icon:** `packaging/assets/Earditor.icns` is committed and is what the build
+  consumes. After editing `assets/earditor-icon.svg`, regenerate it with
+  `packaging/make_icns.sh` (needs `brew install librsvg`, or `pip install cairosvg`)
+  and commit the result. The artwork is inset on a transparent canvas per Apple's
+  824/1024 grid; the script refuses to write an `.icns` whose PNGs lost their alpha,
+  because a flattened render is what produces the white-slab-with-margins Dock icon.
 - **Auto-align is NOT bundled.** librosa drags numpy/scipy/numba in, roughly doubling
   the bundle for the most fragile things to freeze, so it's excluded from both builds
   and lives in `requirements-align.txt` for source installs. `align.py` lazy-imports

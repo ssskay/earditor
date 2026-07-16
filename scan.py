@@ -86,8 +86,12 @@ def walk_library(music_path, extensions, include_paths=(), exclude_paths=()):
                     yield filepath
 
 
-def log_skipped_pending(conn, music_path, cfg, log):
-    """Report what the filters held back, so a short queue is never a mystery."""
+def count_skipped_pending(conn, music_path, cfg):
+    """Count pending files the filters hold back: {excluded, outside, total}.
+
+    Walks every pending row in Python because path filters aren't expressible as a
+    WHERE clause. Cheap enough for a page load, too expensive for a poll loop.
+    """
     excluded = outside = 0
     for filepath in db.iter_pending(conn):
         verdict = config.classify_path(
@@ -97,9 +101,15 @@ def log_skipped_pending(conn, music_path, cfg, log):
             excluded += 1
         elif verdict == config.OUTSIDE:
             outside += 1
+    return {"excluded": excluded, "outside": outside, "total": excluded + outside}
+
+
+def log_skipped_pending(conn, music_path, cfg, log):
+    """Report what the filters held back, so a short queue is never a mystery."""
+    counts = count_skipped_pending(conn, music_path, cfg)
     log.info(
         "Skipped %d pending file(s): %d excluded by filters, %d outside music_path.",
-        excluded + outside, excluded, outside,
+        counts["total"], counts["excluded"], counts["outside"],
     )
 
 
@@ -167,7 +177,7 @@ def _sig_flag(sig):
     return {"green": "✓", "yellow": "~", "red": "✗", "neutral": "·"}.get(sig["status"], "?")
 
 
-def triage(conn, log, limit=None, chunk=500, predicate=None):
+def triage(conn, log, limit=None, chunk=500, predicate=None, on_progress=None):
     """
     Fast pass: tag read only — no fingerprinting, no API calls, no delays.
 
@@ -176,12 +186,19 @@ def triage(conn, log, limit=None, chunk=500, predicate=None):
     one-at-a-time through the full pipeline only to skip them is why the pending
     count looks terrifying. After a triage run, `pending` means "files that
     actually need identifying".
+
+    `on_progress(done, total)` is called per file so the UI can narrate the audit
+    — this pass is fast enough that a file counter actually moves.
     """
     pending = db.get_pending(conn, limit=limit, predicate=predicate)
     log.info("Triaging %d pending file(s) — reading tags only…", len(pending))
+    if on_progress:
+        on_progress(0, len(pending))
     batch = []
     retired = messy = untagged = missing = 0
     for i, fp in enumerate(pending, 1):
+        if on_progress:
+            on_progress(i, len(pending))
         if not os.path.isfile(fp):
             missing += 1
             continue

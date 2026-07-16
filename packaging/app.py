@@ -38,6 +38,23 @@ from config import DB_PATH  # noqa: E402
 from review import app, _free_port  # noqa: E402
 
 
+def _pick_folder():
+    """Native folder chooser for the welcome card's "Change folder" control.
+
+    Lives here because packaging/app.py owns the window: review.py must stay
+    importable without a GUI toolkit for source installs and tests, so it gets
+    this as an injected callback instead. Returns a path, or None if cancelled.
+    """
+    windows = webview.windows
+    if not windows:
+        return None
+    result = windows[0].create_file_dialog(webview.FOLDER_DIALOG)
+    if not result:
+        return None
+    # pywebview returns a tuple of selections even for a single-folder dialog.
+    return result[0] if isinstance(result, (list, tuple)) else result
+
+
 def _serve(port):
     # use_reloader=False is required: the reloader spawns a second process, which
     # breaks the pywebview main thread. debug stays off in the shipped app.
@@ -69,6 +86,11 @@ def main():
         title = "Earditor — Review (demo)"
     else:
         db.init_db(str(DB_PATH))
+
+    # Give the review UI a native folder picker. Demo mode never onboards, so it
+    # has no use for one — and must not be able to repoint a real library.
+    if not demo:
+        review.FOLDER_PICKER = _pick_folder
 
     port = _free_port(int(os.environ.get("PORT", "5001")))
     threading.Thread(target=_serve, args=(port,), daemon=True).start()

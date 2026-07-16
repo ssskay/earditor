@@ -27,6 +27,7 @@ from flask import Flask, render_template, jsonify, request, send_file, abort
 
 import config
 import db
+import scan
 import verify
 from config import load_config, DB_PATH, DATA_DIR, __version__
 from tagger import apply_tags
@@ -74,18 +75,27 @@ def conn():
 
 
 # ---------------------------------------------------------------------------
-# Background scan job — runs scan.py as a subprocess so "Scan for more" works
-# from the UI without a terminal. Single job at a time (guarded by a lock);
-# progress is derived from the live pending count in the DB.
+# Background jobs — the two long-running things the UI can start without a
+# terminal. One job at a time, guarded by _scan_lock:
+#
+#   "triage" — the 60-second audit. Walks the library, registers what's there,
+#              and retires every already-clean file. Tag reads only, so it runs
+#              in-process and reports true file-by-file progress.
+#   "scan"   — identification. Runs scan.py (subprocess from source, nested
+#              thread when frozen), and progress is polled out of the DB.
+#
+# Progress is counted in FILES, not review cards: most files resolve without
+# ever producing a card, so a card counter reads as frozen mid-run.
 # ---------------------------------------------------------------------------
 _scan_lock = threading.Lock()
-SCAN = {
+JOB = {
+    "job": None,          # "scan" | "triage" | None
     "running": False,
     "started_at": None,
     "finished_at": None,
-    "total": 0,        # review cards this run is aiming for
-    "done": 0,         # review cards produced so far this run
-    "scanned": 0,      # files chewed through (most auto-skip)
+    "files_done": 0,      # files this run has chewed through
+    "files_total": 0,     # pending backlog at run start (post-filter)
+    "cards_ready": 0,     # new review cards this run has produced
     "returncode": None,
     "error": None,
 }
@@ -99,11 +109,60 @@ def _status_counts():
         c.close()
 
 
+def _finish_job(returncode, error=None):
+    with _scan_lock:
+        JOB.update(running=False, returncode=returncode, finished_at=time.time())
+        if error:
+            JOB["error"] = error
+        elif returncode not in (0, None):
+            JOB["error"] = f"scan exited with code {returncode}"
+
+
+def _pending_total(cfg_local):
+    """Post-filter pending count — the denominator for "file 214 of 5,260"."""
+    c = conn()
+    try:
+        return len(db.get_pending(c, predicate=cfg_local.allows))
+    finally:
+        c.close()
+
+
+def _triage_worker():
+    """The 60-second audit: register every file under music_path, then retire the
+    ones whose tags are already clean. No network, no writes to any audio file."""
+    cfg_local = load_config()
+    music_path = cfg_local.music_path
+    if not os.path.isdir(music_path):
+        _finish_job(None, f"Music folder not found: {music_path}")
+        return
+    c = conn()
+    try:
+        files = list(scan.walk_library(
+            music_path, cfg_local.audio_extensions,
+            cfg_local.include_paths, cfg_local.exclude_paths,
+        ))
+        db.add_pending_bulk(c, files)
+
+        def progress(done, total):
+            with _scan_lock:
+                JOB["files_done"] = done
+                JOB["files_total"] = total
+
+        scan.triage(c, log, predicate=cfg_local.allows, on_progress=progress)
+    except Exception as e:
+        log.exception("Triage failed: %s", e)
+        _finish_job(None, str(e))
+        return
+    finally:
+        c.close()
+    _finish_job(0)
+    log.info("Triage finished")
+
+
 def _scan_worker():
     """
-    Run scan.py until it produces SCAN_QUEUE_TARGET review cards. Progress is the
-    number of NEW cards ('scanned' rows) — not the raw pending count, which is
-    every audio file in the library and mostly resolves without a card.
+    Run scan.py until it produces SCAN_QUEUE_TARGET review cards, publishing
+    file-level progress the whole way.
     """
     def _resolved(counts):
         # Files that have left 'pending'. Robust to the library walk ADDING pending
@@ -113,10 +172,11 @@ def _scan_worker():
     before = _status_counts()
     start_cards = before.get("scanned", 0)
     start_resolved = _resolved(before)
+    # Counted BEFORE taking the lock: it walks every pending row, and holding the
+    # lock across that would stall each /api/scan/status poll behind it.
+    total = _pending_total(load_config())
     with _scan_lock:
-        SCAN["total"] = SCAN_QUEUE_TARGET
-        SCAN["done"] = 0
-        SCAN["scanned"] = 0
+        JOB.update(files_done=0, cards_ready=0, files_total=total)
     scan_args = ["--queue-target", str(SCAN_QUEUE_TARGET),
                  "--max-files", str(SCAN_MAX_FILES)]
     try:
@@ -124,7 +184,6 @@ def _scan_worker():
             # A py2app bundle has no standalone scan.py to launch. Reuse the same
             # CLI entry point in a nested worker so this thread can keep publishing
             # live progress while the native Scan button does its work.
-            import scan
             result = {"returncode": None}
             scan_thread = threading.Thread(
                 target=lambda: result.update(returncode=scan.main(scan_args)),
@@ -137,38 +196,37 @@ def _scan_worker():
                 [sys.executable, str(HERE / "scan.py"), *scan_args],
                 cwd=str(HERE),
             )
-            returncode = None
     except Exception as e:
-        with _scan_lock:
-            SCAN.update(running=False, error=str(e), finished_at=time.time())
+        _finish_job(None, str(e))
         log.exception("Failed to launch scan subprocess: %s", e)
         return
 
-    if proc is not None or getattr(sys, "frozen", False):
-        while ((proc is not None and proc.poll() is None) or
-               (proc is None and scan_thread.is_alive())):
-            counts = _status_counts()
-            cards = max(0, counts.get("scanned", 0) - start_cards)
-            files = max(0, _resolved(counts) - start_resolved)
-            with _scan_lock:
-                SCAN["done"] = min(SCAN["total"], cards)
-                SCAN["scanned"] = files
-            time.sleep(1.0)
-        returncode = proc.returncode if proc is not None else result["returncode"]
+    while ((proc is not None and proc.poll() is None) or
+           (proc is None and scan_thread.is_alive())):
+        counts = _status_counts()
+        with _scan_lock:
+            JOB["cards_ready"] = max(0, counts.get("scanned", 0) - start_cards)
+            JOB["files_done"] = max(0, _resolved(counts) - start_resolved)
+        time.sleep(1.0)
+    returncode = proc.returncode if proc is not None else result["returncode"]
 
+    # Final read AFTER the process exits: the last poll fires up to a second
+    # before the run ends, which otherwise leaves the bar stranded at 94%.
+    counts = _status_counts()
     with _scan_lock:
-        SCAN["returncode"] = returncode
-        SCAN["done"] = max(0, _status_counts().get("scanned", 0) - start_cards)
-        SCAN["running"] = False
-        SCAN["finished_at"] = time.time()
-        if returncode not in (0, None):
-            SCAN["error"] = f"scan exited with code {returncode}"
+        JOB["cards_ready"] = max(0, counts.get("scanned", 0) - start_cards)
+        JOB["files_done"] = max(0, _resolved(counts) - start_resolved)
+    _finish_job(returncode)
     log.info("Background scan finished (returncode=%s, new cards=%s)",
-             returncode, SCAN["done"])
+             returncode, JOB["cards_ready"])
 
 
-def _scan_snapshot():
-    """Header counts + scan progress, cheap enough to poll every ~1.5s."""
+def _job_snapshot():
+    """Header counts + job progress, cheap enough to poll every ~1.5s.
+
+    Deliberately excludes the path-filter skip counts: those walk every pending
+    row in Python, which is fine for /api/stats on a page load but not here.
+    """
     c = conn()
     try:
         status_counts = db.count_by_status(c)
@@ -176,12 +234,19 @@ def _scan_snapshot():
     finally:
         c.close()
     with _scan_lock:
-        s = dict(SCAN)
+        s = dict(JOB)
+    # Rolling average over the whole run — the honest "~6s per file", which for
+    # identification is dominated by the politeness delays, not by the machine.
+    end = s["finished_at"] or time.time()
+    elapsed = (end - s["started_at"]) if s["started_at"] else 0
+    secs_per_file = round(elapsed / s["files_done"], 1) if s["files_done"] else None
     return {
+        "job": s["job"],
         "running": s["running"],
-        "total": s["total"],          # cards this run is aiming for
-        "done": s["done"],            # cards produced so far
-        "scanned": s["scanned"],      # files chewed through (most auto-skip)
+        "files_done": s["files_done"],
+        "files_total": s["files_total"],
+        "cards_ready": s["cards_ready"],
+        "secs_per_file": secs_per_file,
         "pending": status_counts.get("pending", 0),   # raw file backlog, NOT cards
         "error": s["error"],
         "tier_counts": tier_counts,
@@ -189,23 +254,138 @@ def _scan_snapshot():
     }
 
 
+JOB_WORKERS = {"scan": _scan_worker, "triage": _triage_worker}
+
+
 @app.route("/api/scan/start", methods=["POST"])
 def api_scan_start():
     if DEMO:
         return jsonify({"ok": False, "error": "demo"}), 400
+    job = (request.get_json(silent=True) or {}).get("job", "scan")
+    if job not in JOB_WORKERS:
+        return jsonify({"ok": False, "error": "unknown_job"}), 400
     with _scan_lock:
-        if SCAN["running"]:
+        if JOB["running"]:
             return jsonify({"ok": False, "error": "already_running"}), 409
-        SCAN.update(running=True, started_at=time.time(), finished_at=None,
-                    total=0, done=0, returncode=None, error=None)
-    threading.Thread(target=_scan_worker, daemon=True).start()
-    log.info("Background scan started")
-    return jsonify({"ok": True})
+        JOB.update(job=job, running=True, started_at=time.time(), finished_at=None,
+                   files_done=0, files_total=0, cards_ready=0,
+                   returncode=None, error=None)
+    threading.Thread(target=JOB_WORKERS[job], daemon=True).start()
+    log.info("Background %s started", job)
+    return jsonify({"ok": True, "job": job})
 
 
 @app.route("/api/scan/status")
 def api_scan_status():
-    return jsonify(_scan_snapshot())
+    return jsonify(_job_snapshot())
+
+
+@app.route("/api/stats")
+def api_stats():
+    """Library-shape numbers for the report card: how much is already clean, how
+    much is left, and what the path filters are holding back."""
+    c = conn()
+    try:
+        status_counts = db.count_by_status(c)
+        filters = scan.count_skipped_pending(c, cfg.music_path, cfg)
+    finally:
+        c.close()
+    total = sum(status_counts.values())
+    # "Clean" is what needs nothing from you: retired by triage, or already
+    # accepted in review. Everything else is still work.
+    clean = status_counts.get("tagged", 0) + status_counts.get("accepted", 0)
+    return jsonify({
+        "total": total,
+        "clean": clean,
+        "pending": status_counts.get("pending", 0),
+        "status_counts": status_counts,
+        "filters": filters,
+        "music_path": cfg.music_path,
+    })
+
+
+# Injected by packaging/app.py when there's a native window to hang a dialog off.
+# review.py must never import webview: a source install has no window, and the
+# import alone would make the browser path depend on a GUI toolkit. Returns the
+# chosen directory, or None if the user cancelled.
+FOLDER_PICKER = None
+CONFIG_EXAMPLE = RESOURCE_ROOT / "config.example.json"
+
+# The only keys /api/config will write. Everything else stays a hand-edit, so a
+# UI bug can't rewrite thresholds or delays behind the user's back.
+EDITABLE_KEYS = ("music_path",)
+
+
+def _write_config(updates):
+    """Merge `updates` into config.json in DATA_DIR and reload the live config.
+
+    Seeds from config.example.json when there's no config yet, so a first-run
+    write leaves the user a fully commented file rather than a one-key stub.
+    """
+    global cfg
+    path = Path(config.CONFIG_PATH)
+    data = {}
+    for src in (path, CONFIG_EXAMPLE):
+        if src.exists():
+            try:
+                data = json.loads(src.read_text(encoding="utf-8"))
+                break
+            except Exception as e:
+                log.warning("Could not parse %s (%s) — starting from defaults", src, e)
+    data.update(updates)
+    path.parent.mkdir(parents=True, exist_ok=True)
+    # Write-then-rename: a crash mid-write must not leave a truncated config.json
+    # that the next launch would fall back to defaults for.
+    tmp = path.with_suffix(".json.tmp")
+    tmp.write_text(json.dumps(data, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
+    os.replace(tmp, path)
+    # Reload from the same path we just wrote — load_config()'s default argument
+    # binds at import, so it would not follow a relocated CONFIG_PATH.
+    cfg = load_config(path)      # the running process must not hold a stale path
+    log.info("Config updated (%s) → %s", ", ".join(updates), path)
+    return cfg
+
+
+@app.route("/api/config", methods=["GET", "POST"])
+def api_config():
+    if request.method == "GET":
+        return jsonify({
+            "music_path": cfg.get("music_path"),
+            "music_path_resolved": cfg.music_path,
+            "music_path_exists": os.path.isdir(cfg.music_path),
+            "can_pick_folder": FOLDER_PICKER is not None,
+        })
+    if DEMO:
+        return jsonify({"ok": False, "error": "demo"}), 400
+    body = request.get_json(silent=True) or {}
+    updates = {k: body[k] for k in EDITABLE_KEYS if k in body}
+    if not updates:
+        return jsonify({"ok": False, "error": "nothing to update"}), 400
+    raw = str(updates.get("music_path", "")).strip()
+    # Validate what the path MEANS (expanded), but persist what the user typed:
+    # "~/Music" stays portable across machines, an absolute path stays exact.
+    resolved = os.path.expanduser(os.path.expandvars(raw))
+    if not resolved or not os.path.isdir(resolved):
+        return jsonify({"ok": False, "error": "not_a_directory", "path": resolved}), 400
+    updates["music_path"] = raw
+    new_cfg = _write_config(updates)
+    return jsonify({"ok": True, "music_path": new_cfg.get("music_path"),
+                    "music_path_resolved": new_cfg.music_path})
+
+
+@app.route("/api/config/pick_folder", methods=["POST"])
+def api_pick_folder():
+    """Open the OS folder picker — packaged app only (needs a native window)."""
+    if FOLDER_PICKER is None:
+        return jsonify({"ok": False, "error": "no_window"}), 400
+    try:
+        chosen = FOLDER_PICKER()
+    except Exception as e:
+        log.exception("Folder picker failed: %s", e)
+        return jsonify({"ok": False, "error": str(e)}), 500
+    if not chosen:
+        return jsonify({"ok": False, "error": "cancelled"})
+    return jsonify({"ok": True, "path": chosen})
 
 
 @app.route("/api/recent")

@@ -36,6 +36,7 @@ venv/
 RENAME_HANDOFF.md
 LAUNCH_HANDOFF.md
 DEPLOY_HANDOFF.md
+ONBOARDING_HANDOFF.md
 
 # vendored build binaries (fpcalc) — fetched by the build workflow, never committed
 packaging/vendor/

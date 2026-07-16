@@ -303,6 +303,60 @@
   .empty code { font-family: var(--font-mono); background: var(--panel-2); border: 1px solid var(--line); border-radius: var(--r-xs); padding: 1px 6px; }
   .empty .btn { margin-top: 20px; }
 
+  /* Home states — what an empty queue means depends on what's in the DB:
+     nothing scanned yet → welcome; work left → report card; genuinely done → 🎉 */
+  .home { max-width: 620px; margin: 56px auto; padding: 30px 34px 34px;
+    background: var(--panel); border: 1px solid var(--line); border-radius: var(--r-lg);
+    box-shadow: var(--shadow); text-align: center; }
+  .home h2 { font-family: var(--font-display); font-optical-sizing: auto;
+    font-size: 26px; font-weight: 560; font-style: italic; letter-spacing: -.015em;
+    margin: 0 0 12px; color: var(--ink); }
+  .home p.lede { color: var(--ink-soft); font-size: 14.5px; margin: 0 auto 24px; max-width: 50ch; }
+  .home .btn.big { font-size: 14.5px; padding: 11px 22px; }
+  .home .cap { font-size: 12px; color: var(--ink-mute); margin: 11px 0 0; }
+  .home .divider { height: 1px; background: var(--line); margin: 26px -34px 24px; }
+
+  /* Current music folder + the control to repoint it */
+  .folder-row { display: flex; align-items: center; justify-content: center; gap: 10px;
+    flex-wrap: wrap; font-size: 12.5px; color: var(--ink-mute); }
+  .folder-row .path { font-family: var(--font-mono); font-size: 11.5px; color: var(--ink-soft);
+    background: var(--panel-2); border: 1px solid var(--line); border-radius: var(--r-xs);
+    padding: 3px 8px; max-width: 100%; overflow-wrap: anywhere; }
+  .folder-row .path.missing { color: var(--bad); border-color: var(--bad-line); background: var(--bad-wash); }
+  .folder-edit { display: none; gap: 8px; margin-top: 14px; justify-content: center; }
+  .folder-edit.on { display: flex; }
+  .folder-edit input { flex: 1; max-width: 380px; font-family: var(--font-mono); font-size: 12px;
+    padding: 8px 10px; border-radius: var(--r-sm); border: 1px solid var(--line-2);
+    background: var(--panel-2); color: var(--ink); }
+  .folder-edit input:focus-visible { outline: 2px solid var(--rose); outline-offset: 1px; }
+
+  /* The audit result: one split bar — green is done, neutral is what's left */
+  .split { display: flex; height: 12px; border-radius: var(--r-pill); overflow: hidden;
+    background: var(--panel-3); border: 1px solid var(--line); margin: 20px 0 14px; }
+  .split > i { display: block; height: 100%; transition: width var(--dur-slow) var(--ease-out); }
+  .split > i.done { background: var(--ok); }
+  .legend { display: flex; gap: 20px; justify-content: center; flex-wrap: wrap;
+    font-size: 12.5px; color: var(--ink-soft); }
+  .legend .k { display: inline-flex; align-items: center; gap: 7px; }
+  .legend .sw { width: 9px; height: 9px; border-radius: 2px; background: var(--panel-3);
+    border: 1px solid var(--line-2); }
+  .legend .k.done .sw { background: var(--ok); border-color: transparent; }
+  .legend b { font-family: var(--font-mono); font-weight: 600; color: var(--ink); }
+  .filter-note { margin-top: 16px; font-size: 12.5px; color: var(--warn);
+    background: var(--warn-wash); border: 1px solid var(--warn-line);
+    border-radius: var(--r-sm); padding: 9px 12px; }
+
+  /* In-page job progress — files, not cards (see §5) */
+  .job { text-align: left; }
+  .job .line { font-family: var(--font-mono); font-size: 12.5px; color: var(--ink); }
+  .job .bar { height: 6px; border-radius: var(--r-pill); background: var(--panel-3);
+    overflow: hidden; margin: 10px 0 12px; }
+  .job .bar > i { display: block; height: 100%; width: 0; background: var(--rose);
+    border-radius: var(--r-pill); transition: width var(--dur-slow) var(--ease-out); }
+  .job .bar.indet > i { width: 40%; animation: indet 1.2s var(--ease-in-out) infinite; }
+  .job .cap { text-align: left; margin: 0; }
+  .job .btn { margin-top: 16px; }
+
   .toast {
     position: fixed; bottom: 22px; left: 50%; transform: translateX(-50%) translateY(8px);
     background: var(--ink); color: var(--panel); padding: 11px 18px; border-radius: var(--r-md);
@@ -406,8 +460,9 @@ const esc = s => (s||"").replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&
 let CARDS = [];      // flat list of {el, data} for keyboard nav
 let ACTIVE = -1;
 let VERIFIED = [];   // filepaths currently in the VERIFIED tier
-let SCANNING = false;  // a background scan.py job is running
-let SCAN_POLL = null;  // interval id while polling scan status
+let SCANNING = false;  // a background job (scan or triage) is running
+let SCAN_POLL = null;  // interval id while polling job status
+let LAST_STATUS = null;  // last /api/scan/status payload
 let LAST_ACTION = null;  // filepath of the last accept/cover/skip, for U = undo
 // Paging: render the queue in batches so the browser never builds all ~2,700
 // cards at once (rendering the whole queue synchronously is what hangs Safari).
@@ -845,14 +900,138 @@ function renderInit(data) {
   main.innerHTML = "";
   CARDS = []; VERIFIED = []; RENDERED = 0; LAST_VERDICT = null;
   updateHeader(data);
-  if (!TOTAL || !data.groups.length) {
-    main.innerHTML = `<div class="empty">🎉 Queue is empty — nothing left to review.<br>
-      Scan your library for new rips to add to the queue.
-      <br><button class="btn scan" onclick="startScan()" ${SCANNING ? "disabled" : ""}>⟳ Scan for more</button></div>`;
-    return;
-  }
+  if (!TOTAL || !data.groups.length) { renderHome(); return; }
   appendCards(data.groups);
   if (CARDS.length) setActive(0);
+}
+
+/* ---- Home states (§1) ----------------------------------------------------
+   An empty queue means three different things, and celebrating all of them is
+   how a brand-new user gets congratulated for doing nothing. Which state we're
+   in depends on what's in the DB, so ask the server rather than infer it from
+   the (empty) queue.                                                        */
+let HOME = null;          // last /api/stats + /api/config payload
+const fmt = n => (n || 0).toLocaleString();
+
+async function renderHome() {
+  const main = $("#main");
+  // Demo fixtures always fill the queue; reaching here means the visitor skipped
+  // every card, which is genuinely done — and demo must never onboard.
+  if (DEMO) { main.innerHTML = celebrationHtml(); return; }
+  main.innerHTML = `<div class="empty">Reading your library…</div>`;
+  let st, cfg;
+  try {
+    [st, cfg] = await Promise.all([
+      fetch("/api/stats").then(r => r.json()),
+      fetch("/api/config").then(r => r.json()),
+    ]);
+  } catch (e) {
+    main.innerHTML = `<div class="empty">Couldn't read your library — ${esc(String(e))}.
+      <br><button class="btn" onclick="load()">Retry</button></div>`;
+    return;
+  }
+  HOME = { stats: st, config: cfg };
+  main.innerHTML = !st.total     ? welcomeHtml(cfg)
+                 : st.pending    ? reportHtml(st, cfg)
+                 : celebrationHtml();
+  renderJob();            // a job may already be running behind this screen
+}
+
+function welcomeHtml(cfg) {
+  return `<div class="home">
+    <h2>Audit your library</h2>
+    <p class="lede">Earditor reads your files' tags first — no internet, nothing
+      written — and shows you how much of your library is already provably correct.</p>
+    <div id="jobSlot">
+      <button class="btn ok big audit" onclick="startJob('triage')">Run the 60-second audit</button>
+      <p class="cap">Reads tags only. No API calls, no changes.</p>
+    </div>
+    <div class="divider"></div>
+    ${folderHtml(cfg)}
+  </div>`;
+}
+
+function reportHtml(st, cfg) {
+  const total = st.total || 0, clean = st.clean || 0;
+  const pct = total ? Math.round(clean / total * 100) : 0;
+  const left = Math.max(0, total - clean);
+  const skipped = (st.filters || {}).total || 0;
+  // A scan can only touch pending files the filters allow — if that's zero, the
+  // empty queue is the filters' doing, and "Start identifying" would be a lie.
+  const identifiable = Math.max(0, (st.pending || 0) - skipped);
+  return `<div class="home">
+    <h2>Your library: ${fmt(total)} files</h2>
+    <p class="lede">${pct}% is already cleanly tagged and needs nothing.</p>
+    <div class="split">
+      <i class="done" style="width:${pct}%"></i><i style="width:${100 - pct}%"></i>
+    </div>
+    <div class="legend">
+      <span class="k done"><span class="sw"></span>already tagged <b>${fmt(clean)}</b></span>
+      <span class="k"><span class="sw"></span>to identify <b>${fmt(left)}</b></span>
+    </div>
+    ${skipped ? `<div class="filter-note">${fmt(skipped)} pending file${skipped === 1 ? " is" : "s are"}
+       excluded by your path filters.</div>` : ""}
+    <div class="divider"></div>
+    <div id="jobSlot">${identifiable ? `
+      <button class="btn ok big identify" onclick="startJob('scan')">Start identifying</button>
+      <p class="cap">Identification is careful, not fast — cards appear as they're
+        proven. Leave it running.</p>` : `
+      <p class="cap">Nothing left to identify that your path filters allow.
+        Widen <code>include_paths</code> or <code>exclude_paths</code> in config.json.</p>`}
+    </div>
+    <div class="divider"></div>
+    ${folderHtml(cfg)}
+  </div>`;
+}
+
+function celebrationHtml() {
+  return `<div class="empty">🎉 Queue is empty — nothing left to review.<br>
+    Scan your library for new rips to add to the queue.
+    <br><button class="btn scan" onclick="startScan()" ${SCANNING ? "disabled" : ""}>⟳ Scan for more</button></div>`;
+}
+
+function folderHtml(c) {
+  const shown = c.music_path_resolved || c.music_path || "";
+  const missing = c.music_path_exists === false;
+  return `<div class="folder-row">
+      <span>Music folder</span>
+      <span class="path${missing ? " missing" : ""}">${esc(shown)}</span>
+      <button class="btn ghost" onclick="changeFolder()">Change folder</button>
+    </div>
+    ${missing ? `<p class="cap">That folder doesn't exist — point Earditor at the one your music is in.</p>` : ""}
+    <div class="folder-edit" id="folderEdit">
+      <input id="folderInput" value="${esc(c.music_path || "")}" spellcheck="false"
+             placeholder="~/Music/Music/Media.localized/Music"
+             onkeydown="if (event.key === 'Enter') saveFolder()">
+      <button class="btn ok" onclick="saveFolder()">Save</button>
+      <button class="btn ghost" onclick="$('#folderEdit').classList.remove('on')">Cancel</button>
+    </div>`;
+}
+
+// Packaged app → the OS folder picker (pywebview owns the window, so the server
+// opens it for us). Browser → an editable path, validated server-side.
+async function changeFolder() {
+  if (HOME && HOME.config && HOME.config.can_pick_folder) {
+    const r = await post("/api/config/pick_folder", {});
+    if (r.ok) { saveFolder(r.path); }
+    else if (r.error !== "cancelled") { toast("Couldn't open the folder picker"); }
+    return;
+  }
+  $("#folderEdit").classList.add("on");
+  const inp = $("#folderInput");
+  inp.focus(); inp.select();
+}
+
+async function saveFolder(path) {
+  const value = (path !== undefined ? path : $("#folderInput").value).trim();
+  if (!value) return;
+  const r = await post("/api/config", { music_path: value });
+  if (!r.ok) {
+    toast(r.error === "not_a_directory" ? "No folder at that path" : "Couldn't save that folder");
+    return;
+  }
+  toast("Music folder set");
+  renderHome();
 }
 
 async function post(url, body) {
@@ -1256,26 +1435,66 @@ async function previewCandidate(cd, btn) {
   PREVIEW.play().catch(() => toast("Preview failed to play"));
 }
 
-/* ---- Scan for more: run scan.py as a background job from the UI ---- */
-async function startScan() {
-  if (SCANNING) { toast("A scan is already running"); return; }
+/* ---- Background jobs: the audit (triage) and identification (scan) ---- */
+async function startJob(job) {
+  if (SCANNING) { toast("Something is already running"); return; }
   setScanning(true);
-  const res = await post("/api/scan/start", {});
+  const res = await post("/api/scan/start", { job });
   if (!res.ok && res.error !== "already_running") {
     setScanning(false);
-    toast("Couldn't start scan (see terminal)");
+    toast("Couldn't start (see the terminal)");
     return;
   }
-  toast("Scanning your library for new tracks…");
+  // Show the progress block on the first frame rather than waiting up to 1.5s
+  // for the first poll to land.
+  LAST_STATUS = { job, running: true, files_done: 0, files_total: 0, cards_ready: 0 };
+  renderJob(LAST_STATUS);
+  updateScanProgress(LAST_STATUS);
+  toast(job === "triage" ? "Reading your library's tags…" : "Identifying your library…");
   beginScanPolling();
 }
+
+const startScan = () => startJob("scan");   // the header button
 
 function setScanning(on) {
   SCANNING = on;
   $("#scanStatus").classList.toggle("on", on);
-  document.querySelectorAll("#scanBtn, .empty .btn.scan").forEach(b => b.disabled = on);
+  document.querySelectorAll(".btn.scan, .btn.audit, .btn.identify")
+    .forEach(b => b.disabled = on);
   const sb = $("#scanBtn");
   if (sb) sb.textContent = on ? "Scanning…" : "⟳ Scan for more";   // absent in --demo
+}
+
+// The honest progress block (§5): counted in FILES, because most files never
+// produce a card — a card counter reads as frozen for minutes at a time.
+function jobHtml(s) {
+  const total = s.files_total || 0;
+  const pct = total ? Math.min(100, Math.round((s.files_done || 0) / total * 100)) : 0;
+  const rate = s.secs_per_file ? ` · ~${s.secs_per_file}s per file` : "";
+  const triage = s.job === "triage";
+  const line = triage
+    ? `Reading tags… ${fmt(s.files_done)} / ${fmt(total)}`
+    : `file ${fmt(s.files_done)} of ${fmt(total)} · ${fmt(s.cards_ready)} ready to review${rate}`;
+  return `<div class="job">
+    <div class="line">${line}</div>
+    <div class="bar${total ? "" : " indet"}"><i style="width:${pct}%"></i></div>
+    <p class="cap">${triage
+      ? "Reading tags only — no internet, nothing written."
+      : "Identification is careful, not fast — cards appear as they're proven. Leave it running."}</p>
+    ${!triage && s.cards_ready > 0
+      ? `<button class="btn ok" onclick="load()">Review ${fmt(s.cards_ready)} now</button>`
+      : ""}
+  </div>`;
+}
+
+// Paint progress into whichever home screen is showing. A no-op once the queue
+// is rendered — the header indicator carries progress from there.
+function renderJob(s) {
+  const slot = $("#jobSlot");
+  if (!slot) return;
+  s = s || LAST_STATUS;
+  if (!s || !s.running) return;
+  slot.innerHTML = jobHtml(s);
 }
 
 function beginScanPolling() {
@@ -1292,39 +1511,49 @@ function updateHeaderCounts(tier_counts, status_counts) {
 
 function updateScanProgress(s) {
   const bar = $("#scanBar"), fill = bar.querySelector("i"), txt = $("#scanText");
-  if (s.total > 0) {
+  const total = s.files_total || 0;
+  if (total > 0) {
     bar.classList.remove("indet");
-    fill.style.width = Math.min(100, Math.round(s.done / s.total * 100)) + "%";
-    // Progress is NEW CARDS, not the raw file backlog — most files are already
-    // clean-tagged and get skipped without ever producing a card.
-    const files = s.scanned ? ` · ${s.scanned} files checked` : "";
-    txt.textContent = `Scanning… ${s.done}/${s.total} new cards${files}`;
+    fill.style.width = Math.min(100, Math.round((s.files_done || 0) / total * 100)) + "%";
   } else {
     bar.classList.add("indet");
     fill.style.width = "";
-    txt.textContent = "Scanning…";
   }
+  if (s.job === "triage") {
+    txt.textContent = total ? `Reading tags… ${fmt(s.files_done)} / ${fmt(total)}`
+                            : "Reading tags…";
+    return;
+  }
+  const rate = s.secs_per_file ? ` · ~${s.secs_per_file}s per file` : "";
+  txt.textContent = total
+    ? `file ${fmt(s.files_done)} of ${fmt(total)} · ${fmt(s.cards_ready)} ready${rate}`
+    : "Scanning…";
 }
 
 async function pollScan() {
   let s;
   try { s = await (await fetch("/api/scan/status")).json(); }
   catch (_) { return; }               // transient error — keep polling
+  LAST_STATUS = s;
   updateHeaderCounts(s.tier_counts, s.status_counts);  // live pills, no card churn
   updateScanProgress(s);
+  renderJob(s);
   if (!s.running) {
     clearInterval(SCAN_POLL); SCAN_POLL = null;
     setScanning(false);
-    toast(s.error ? "Scan ended: " + s.error : "Scan complete — queue updated");
-    load();                            // full refresh to pull in new cards
+    toast(s.error ? "Ended: " + s.error
+         : s.job === "triage" ? "Audit complete" : "Scan complete — queue updated");
+    // The audit produces no cards, so this lands back on the report card with
+    // real numbers; a scan lands on whatever it proved.
+    load();
   }
 }
 
-// If the page is (re)loaded while a scan is already running, resume the indicator.
+// If the page is (re)loaded while a job is already running, resume the indicator.
 async function resumeScanIfRunning() {
   try {
     const s = await (await fetch("/api/scan/status")).json();
-    if (s.running) { setScanning(true); beginScanPolling(); }
+    if (s.running) { LAST_STATUS = s; setScanning(true); beginScanPolling(); }
   } catch (_) {}
 }
 
