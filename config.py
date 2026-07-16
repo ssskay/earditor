@@ -34,7 +34,16 @@ def _data_dir():
     if override:
         return Path(override).expanduser().resolve()
     if getattr(sys, "frozen", False):
-        return Path.home() / "Library" / "Application Support" / "Earditor"
+        if sys.platform == "darwin":
+            return Path.home() / "Library" / "Application Support" / "Earditor"
+        if sys.platform == "win32":
+            # %APPDATA% is the roaming profile; fall back to the literal path for
+            # the rare stripped environment where the variable is missing.
+            base = os.environ.get("APPDATA") or (Path.home() / "AppData" / "Roaming")
+            return Path(base) / "Earditor"
+        return Path(
+            os.environ.get("XDG_DATA_HOME") or (Path.home() / ".local" / "share")
+        ) / "Earditor"
     return SOURCE_DIR
 
 
@@ -117,6 +126,10 @@ DEFAULTS = {
     # (review option 1 with a cover signal) so covers are smart-playlist-able while
     # keeping the artist's real album/art. Set false to leave Grouping untouched.
     "stamp_cover_grouping": True,
+    # Ask Music.app to refresh each accepted track and add it to playlist_name.
+    # macOS only — forced off everywhere else (see Config.music_app_integration),
+    # where Earditor runs files-only: tags and cover art are still written to disk.
+    "music_app_integration": True,
     # Narrow the library to part of music_path. Each entry is a directory (a
     # trailing /** or /* is accepted and ignored); relative entries resolve against
     # music_path. Empty include_paths means "everything under music_path".
@@ -249,6 +262,17 @@ class Config:
         return str(DB_PATH)
 
     @property
+    def music_app_integration(self):
+        """True only where a Music.app actually exists to talk to.
+
+        The platform check wins over config.json: setting it true on Windows would
+        otherwise mean every accept pays an osascript timeout to accomplish nothing.
+        """
+        if sys.platform != "darwin":
+            return False
+        return bool(self._data.get("music_app_integration", True))
+
+    @property
     def include_paths(self):
         return list(self._data.get("include_paths") or [])
 
@@ -295,11 +319,20 @@ def load_config(path=CONFIG_PATH):
     return Config(data)
 
 
+def music_app_enabled(cfg=None):
+    """Module-level form of Config.music_app_integration, for callers without a cfg."""
+    if sys.platform != "darwin":
+        return False
+    if cfg is None:
+        cfg = load_config()
+    return bool(cfg.get("music_app_integration", True))
+
+
 def get_acoustid_key():
     """
     Resolve the AcoustID API key without ever persisting it.
 
-    Order: $ACOUSTID_API_KEY, then macOS Keychain (service 'acoustid').
+    Order: $ACOUSTID_API_KEY, then (macOS only) the Keychain, service 'acoustid'.
     Also honors $FPCALC by leaving it in the environment for pyacoustid.
     Returns the key string, or None if unavailable (caller degrades gracefully).
     """
@@ -307,18 +340,24 @@ def get_acoustid_key():
     if key:
         return key.strip()
 
-    try:
-        result = subprocess.run(
-            ["security", "find-generic-password", "-s", "acoustid", "-w"],
-            capture_output=True, text=True, timeout=5,
-        )
-        if result.returncode == 0:
-            key = result.stdout.strip()
-            if key:
-                logger.debug("AcoustID key loaded from Keychain")
-                return key
-    except Exception as e:
-        logger.debug("Keychain lookup for acoustid failed: %s", e)
+    if sys.platform == "darwin":
+        try:
+            result = subprocess.run(
+                ["security", "find-generic-password", "-s", "acoustid", "-w"],
+                capture_output=True, text=True, timeout=5,
+            )
+            if result.returncode == 0:
+                key = result.stdout.strip()
+                if key:
+                    logger.debug("AcoustID key loaded from Keychain")
+                    return key
+        except Exception as e:
+            logger.debug("Keychain lookup for acoustid failed: %s", e)
+        source = "env or Keychain"
+    else:
+        # No Keychain to consult off macOS — naming it in the warning would send
+        # Windows users hunting for a thing that isn't there.
+        source = "$ACOUSTID_API_KEY"
 
-    logger.warning("No AcoustID API key found (env or Keychain); AcoustID disabled")
+    logger.warning("No AcoustID API key found (%s); AcoustID disabled", source)
     return None

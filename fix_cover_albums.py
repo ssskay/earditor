@@ -140,6 +140,12 @@ def main():
     args = ap.parse_args()
     logging.basicConfig(level=logging.INFO, format="%(levelname)-7s %(message)s")
 
+    if sys.platform != "darwin":
+        log.error("fix_cover_albums.py drives Music.app through AppleScript and only "
+                  "runs on macOS. On this platform, set cover_album_template in "
+                  "config.json and re-accept the tracks instead.")
+        return 2
+
     cfg = load_config()
     template = (cfg.get("cover_album_template", "") or "").strip()
     if not template:

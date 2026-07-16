@@ -19,6 +19,30 @@ class DataLocationTest(TestCase):
         ):
             self.assertEqual(config._data_dir(), Path(td).resolve())
 
+    def test_frozen_state_dirs_are_per_platform(self):
+        env = {k: v for k, v in os.environ.items() if k != "EARDITOR_DATA_DIR"}
+        cases = [
+            ("darwin", {}, Path.home() / "Library" / "Application Support" / "Earditor"),
+            ("win32", {"APPDATA": os.path.join("C:", "Roaming")},
+             Path(os.path.join("C:", "Roaming")) / "Earditor"),
+            ("win32", {}, Path.home() / "AppData" / "Roaming" / "Earditor"),
+            ("linux", {}, Path.home() / ".local" / "share" / "Earditor"),
+        ]
+        for platform, extra, expected in cases:
+            scrubbed = {k: v for k, v in env.items() if k not in ("APPDATA", "XDG_DATA_HOME")}
+            with self.subTest(platform=platform, extra=bool(extra)):
+                with (
+                    mock.patch.dict(os.environ, {**scrubbed, **extra}, clear=True),
+                    mock.patch.object(config.sys, "platform", platform),
+                    mock.patch.object(config.sys, "frozen", True, create=True),
+                ):
+                    self.assertEqual(config._data_dir(), expected)
+
+    def test_source_checkout_keeps_repo_local_state(self):
+        env = {k: v for k, v in os.environ.items() if k != "EARDITOR_DATA_DIR"}
+        with mock.patch.dict(os.environ, env, clear=True):
+            self.assertEqual(config._data_dir(), config.SOURCE_DIR)
+
     def test_shazamer_database_migrates_without_losing_sidecars(self):
         with TemporaryDirectory() as td:
             root = Path(td)
@@ -68,6 +92,59 @@ class DataLocationTest(TestCase):
             path.write_text('{"playlist_name": "Shazamer — Tagged"}', encoding="utf-8")
             loaded = config.load_config(path)
         self.assertEqual(loaded.playlist_name, "Earditor — Tagged")
+
+
+class MusicAppIntegrationTest(TestCase):
+    """The platform check must win over config.json, in both directions."""
+
+    def _cfg(self, **overrides):
+        return config.Config({**config.DEFAULTS, **overrides})
+
+    def test_enabled_by_default_on_macos(self):
+        with mock.patch.object(config.sys, "platform", "darwin"):
+            self.assertTrue(self._cfg().music_app_integration)
+
+    def test_config_can_turn_it_off_on_macos(self):
+        with mock.patch.object(config.sys, "platform", "darwin"):
+            self.assertFalse(self._cfg(music_app_integration=False).music_app_integration)
+
+    def test_forced_off_on_windows_even_when_config_asks_for_it(self):
+        with mock.patch.object(config.sys, "platform", "win32"):
+            self.assertFalse(self._cfg(music_app_integration=True).music_app_integration)
+
+    def test_forced_off_on_linux(self):
+        with mock.patch.object(config.sys, "platform", "linux"):
+            self.assertFalse(self._cfg().music_app_integration)
+
+
+class AcoustIDKeyTest(TestCase):
+    def test_environment_key_wins_and_never_shells_out(self):
+        with (
+            mock.patch.dict(os.environ, {"ACOUSTID_API_KEY": "  envkey  "}),
+            mock.patch.object(config.subprocess, "run") as run,
+        ):
+            self.assertEqual(config.get_acoustid_key(), "envkey")
+        run.assert_not_called()
+
+    def test_keychain_is_not_consulted_off_macos(self):
+        env = {k: v for k, v in os.environ.items() if k != "ACOUSTID_API_KEY"}
+        with (
+            mock.patch.dict(os.environ, env, clear=True),
+            mock.patch.object(config.sys, "platform", "win32"),
+            mock.patch.object(config.subprocess, "run") as run,
+        ):
+            self.assertIsNone(config.get_acoustid_key())
+        run.assert_not_called()
+
+    def test_no_key_warning_off_macos_does_not_mention_keychain(self):
+        env = {k: v for k, v in os.environ.items() if k != "ACOUSTID_API_KEY"}
+        with (
+            mock.patch.dict(os.environ, env, clear=True),
+            mock.patch.object(config.sys, "platform", "win32"),
+            self.assertLogs("earditor.config", level="WARNING") as logs,
+        ):
+            config.get_acoustid_key()
+        self.assertNotIn("keychain", "\n".join(logs.output).lower())
 
 
 ROOT = os.path.abspath("/lib")

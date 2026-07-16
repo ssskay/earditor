@@ -942,7 +942,11 @@ async function acceptTags(el, tags) {
     LAST_ACTION = el.dataset.fp;
     const extra = tags.grouping ? ` [${tags.grouping}]` : "";
     const demoNote = res.demo ? " · demo: nothing written" : "";
-    toast(`Accepted: ${tags.artist} — ${tags.title}${extra}${demoNote}`, el.dataset.fp);
+    // Off macOS there's no playlist to land in; say so, or a correct accept reads
+    // as a silent failure to anyone waiting for the track to show up in Music.app.
+    const filesOnly = (!res.demo && res.music_app === false)
+      ? " · tagged (not added to Music.app)" : "";
+    toast(`Accepted: ${tags.artist} — ${tags.title}${extra}${demoNote}${filesOnly}`, el.dataset.fp);
     advanceFrom(el);
   } else {
     el.classList.remove("done");

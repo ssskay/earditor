@@ -232,7 +232,10 @@ def api_undo():
             return jsonify({"ok": False, "error": "nothing to undo"}), 400
         new_fp = fp
         applied = res.get("applied") or {}
-        if not os.path.isfile(fp) and applied.get("title"):
+        # Only Music.app relocates files behind our back, so the re-point lookup is
+        # only meaningful when it's in play. Without it the stored path IS the path.
+        if (cfg.music_app_integration and not os.path.isfile(fp)
+                and applied.get("title")):
             loc = find_track_location(applied.get("title"), applied.get("artist"))
             if loc and os.path.isfile(loc):
                 db.relocate(c, fp, loc)
@@ -259,7 +262,10 @@ def _enrich(it):
     scenario options (§1) to an item. Options are recomputed from the stored
     evidence when a row predates option persistence, so old and new rows render
     identically from the one canonical builder in verify.py."""
-    parts = (it.get("filepath") or "").split("/")
+    # Normalize separators before splitting, as utils.raw_folder_name does: a
+    # Windows path has no "/" to split on, which would silently blank the uploader
+    # folder — and the folder IS the uploader identity behind S6 and the Topic hint.
+    parts = (it.get("filepath") or "").replace("\\", "/").split("/")
     raw_folder = parts[-3] if len(parts) >= 3 else ""
     if not it.get("folder_name"):
         it["folder_name"] = raw_folder or None
@@ -494,7 +500,9 @@ def api_accept():
     if not fp or not tags.get("title"):
         return jsonify({"ok": False, "error": "missing filepath or title"}), 400
     ok = _apply(fp, tags)
-    return jsonify({"ok": ok, "demo": DEMO})
+    # music_app tells the UI which toast to show: a plain "tagged" reads as a
+    # failure to anyone who expects the track to appear in their playlist.
+    return jsonify({"ok": ok, "demo": DEMO, "music_app": cfg.music_app_integration})
 
 
 @app.route("/api/batch_accept", methods=["POST"])

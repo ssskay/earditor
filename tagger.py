@@ -14,6 +14,7 @@ import urllib.request
 from mutagen.id3 import ID3, TIT2, TPE1, TALB, TIT1, APIC
 from mutagen.mp3 import MP3
 
+import config
 from itunes_bridge import refresh_and_add_to_playlist
 
 logger = logging.getLogger("earditor.tagger")
@@ -199,7 +200,11 @@ def apply_tags(filepath, tags, playlist_name=None):
     if art_file:
         kwargs["art_file"] = art_file
     try:
-        refresh_and_add_to_playlist(filepath, **kwargs)
+        if config.music_app_enabled():
+            refresh_and_add_to_playlist(filepath, **kwargs)
+        else:
+            logger.info("  Music.app integration off — tags and art written to the "
+                        "file; playlist/artwork push skipped")
     finally:
         if art_file:
             try:
