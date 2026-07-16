@@ -14,15 +14,18 @@ jobs:
         with:
           python-version: "3.11"
           cache: pip
-      - run: brew install chromaprint
-
       # Vendor fpcalc into the bundle so users don't need Homebrew. Chromaprint's
-      # terms permit redistribution. Copied from the brew binary rather than
-      # re-downloaded, so the arch always matches the runner.
+      # terms permit redistribution. Use the official release binary (statically
+      # linked, universal) — the brew binary dynamically links libchromaprint.dylib
+      # and dies when copied out of its cellar. Same version the Windows build pins.
       - name: Vendor fpcalc
+        env:
+          CHROMAPRINT_VERSION: "1.5.1"
         run: |
+          curl -fsSL -o fpcalc.tar.gz "https://github.com/acoustid/chromaprint/releases/download/v${CHROMAPRINT_VERSION}/chromaprint-fpcalc-${CHROMAPRINT_VERSION}-macos-universal.tar.gz"
+          tar -xzf fpcalc.tar.gz
           mkdir -p packaging/vendor
-          cp "$(brew --prefix)/bin/fpcalc" packaging/vendor/fpcalc
+          cp "chromaprint-fpcalc-${CHROMAPRINT_VERSION}-macos-universal/fpcalc" packaging/vendor/fpcalc
           chmod +x packaging/vendor/fpcalc
           packaging/vendor/fpcalc -version
 
