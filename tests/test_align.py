@@ -44,6 +44,35 @@ class FindOffsetTest(unittest.TestCase):
         offset, conf = find_offset(ref, query)
         self.assertEqual((offset, conf), (0, 0.0))
 
+    def test_same_length_perfect_match_is_confident(self):
+        """A ~30s interlude vs a 30s preview leaves ONE candidate window.
+
+        There's no similarity landscape to measure peak sharpness against, so
+        confidence must fall back to raw match quality rather than collapsing
+        to 0.0 — a false 'no match' on a perfect match is the one failure this
+        feature must never produce.
+        """
+        pitches = np.random.default_rng(0).integers(0, 12, size=30)
+        chroma = one_hot_chroma(pitches)
+        offset, conf = find_offset(chroma, one_hot_chroma(pitches))
+        self.assertEqual(offset, 0)
+        self.assertGreater(conf, 0.7)
+
+    def test_same_length_unrelated_query_is_not_confident(self):
+        ref = one_hot_chroma(np.random.default_rng(0).integers(0, 12, size=30))
+        query = one_hot_chroma(np.random.default_rng(999).integers(0, 12, size=30))
+        offset, conf = find_offset(ref, query)
+        self.assertEqual(offset, 0)   # only one window to pick
+        self.assertLess(conf, 0.4)
+
+    def test_silent_chroma_returns_cleanly(self):
+        """All-zero chroma (digital silence) must not divide by zero or NaN."""
+        silence = np.zeros((12, 30))
+        offset, conf = find_offset(silence, silence[:, :10])
+        self.assertEqual(offset, 0)
+        self.assertFalse(np.isnan(conf))
+        self.assertEqual(conf, 0.0)
+
 
 class ConfidenceLabelTest(unittest.TestCase):
     def test_thresholds(self):

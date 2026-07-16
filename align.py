@@ -7,8 +7,10 @@ API doesn't say where. We compute a chromagram of each (chroma survives EQ/bitra
 master differences that would break raw-waveform correlation), slide the preview's
 chroma over the local file's, and report the best offset + a match confidence.
 
-librosa is imported lazily inside chroma_of, so importing this module never requires
-librosa or ffmpeg — callers degrade gracefully when the decode stack is absent.
+This module is the pure-numpy core; the decode layer (chroma_of/align_audio) lands in
+a later task. librosa will be imported lazily inside chroma_of, so importing this
+module never requires librosa or ffmpeg — callers degrade gracefully when the decode
+stack is absent.
 """
 
 import logging
@@ -46,6 +48,12 @@ def find_offset(chroma_ref, chroma_query):
         sims[k] = float(np.mean(np.sum(ref[:, k:k + n_q] * q, axis=0)))
     best = int(np.argmax(sims))
     peak = float(sims[best])
+    if sims.size < 2:
+        # Only one candidate window (n_ref == n_q, e.g. a ~30s interlude vs a 30s
+        # preview): there is no similarity landscape, so the median baseline would
+        # equal the peak and zero out the confidence of even a perfect match. With
+        # no sharpness to measure, raw match quality is the honest answer.
+        return best, float(max(0.0, min(1.0, peak)))
     baseline = float(np.median(sims))
     contrast = (peak - baseline) / (1.0 - baseline + 1e-6)
     confidence = float(max(0.0, min(1.0, peak * contrast)))
