@@ -319,6 +319,7 @@ def main(argv=None):
     args = ap.parse_args(argv)
 
     log, logfile = setup_logging(args.verbose)
+    config.ensure_fpcalc()
     cfg = load_config()
     music_path = args.music_path or cfg.music_path
     log.info("Earditor scan — db=%s  log=%s", DB_PATH, logfile)

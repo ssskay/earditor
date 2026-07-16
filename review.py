@@ -25,9 +25,10 @@ from pathlib import Path
 import requests
 from flask import Flask, render_template, jsonify, request, send_file, abort
 
+import config
 import db
 import verify
-from config import load_config, DB_PATH, __version__
+from config import load_config, DB_PATH, DATA_DIR, __version__
 from tagger import apply_tags
 from itunes_bridge import find_track_location
 from sources.itunes import iTunesSource
@@ -40,14 +41,17 @@ cfg = load_config()
 itunes = iTunesSource(delay=0)
 
 HERE = Path(__file__).resolve().parent
-RESOURCE_ROOT = Path(os.environ.get("RESOURCEPATH", HERE))
+# Resolves $RESOURCEPATH (py2app), sys._MEIPASS (PyInstaller), or the source dir.
+RESOURCE_ROOT = config.resource_root()
 app.template_folder = str(RESOURCE_ROOT / "templates")
 
 # Demo mode (python3 review.py --demo): loads synthetic fixtures into a throwaway
 # demo.db, writes nothing to real files or Music.app, and needs no config or keys.
 # Set in __main__ before the server starts, then read as a global by the routes.
 DEMO = False
-DEMO_DB_PATH = HERE / "demo.db"
+# DATA_DIR, not HERE: in a packaged app HERE is inside the read-only bundle. For a
+# source checkout the two are the same path, so this changes nothing there.
+DEMO_DB_PATH = DATA_DIR / "demo.db"
 DEMO_FIXTURES = RESOURCE_ROOT / "demo" / "fixtures.json"
 
 def _cfg_int(key, default):
@@ -576,6 +580,26 @@ def load_demo_fixtures():
     return len(rows)
 
 
+def enable_demo():
+    """Point the whole app at a throwaway demo DB and load the fixtures.
+
+    Lives here rather than in __main__ so the packaged app (packaging/app.py) can
+    reach it too — `--demo` is the support answer for "is it broken or is it my
+    setup?", which means it has to work identically in the shipped app.
+
+    Returns the number of synthetic tracks loaded. Raises FileNotFoundError when
+    the fixtures weren't bundled.
+    """
+    global DEMO, DB_PATH
+    if not DEMO_FIXTURES.exists():
+        raise FileNotFoundError(DEMO_FIXTURES)
+    DEMO = True
+    DB_PATH = DEMO_DB_PATH        # route the whole app at the throwaway DB
+    _reset_demo_db()
+    db.init_db(str(DB_PATH))
+    return load_demo_fixtures()
+
+
 if __name__ == "__main__":
     ap = argparse.ArgumentParser(description="Earditor review UI")
     ap.add_argument("--demo", action="store_true",
@@ -587,15 +611,12 @@ if __name__ == "__main__":
     args = ap.parse_args()
 
     if args.demo:
-        if not DEMO_FIXTURES.exists():
+        try:
+            n = enable_demo()
+        except FileNotFoundError:
             log.error("Demo fixtures missing at %s — run: python3 demo/build_fixtures.py",
                       DEMO_FIXTURES)
             sys.exit(1)
-        DEMO = True
-        DB_PATH = DEMO_DB_PATH        # route the whole app at the throwaway DB
-        _reset_demo_db()
-        db.init_db(str(DB_PATH))
-        n = load_demo_fixtures()
         log.info("★ DEMO MODE — %d synthetic tracks loaded. No real files or Music.app "
                  "are touched; accepting writes nothing.", n)
     else:

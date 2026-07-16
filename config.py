@@ -51,6 +51,40 @@ def _data_dir():
     return SOURCE_DIR
 
 
+def resource_root():
+    """Directory holding bundled read-only resources (templates/, demo/, fpcalc).
+
+    py2app exports $RESOURCEPATH; PyInstaller unpacks to sys._MEIPASS; a source
+    checkout is just the source directory. Distinct from _data_dir(), which is
+    writable state — resources are replaced wholesale by an upgrade, state is not.
+    """
+    env = os.environ.get("RESOURCEPATH")
+    if env:
+        return Path(env)
+    meipass = getattr(sys, "_MEIPASS", None)
+    if meipass:
+        return Path(meipass)
+    return SOURCE_DIR
+
+
+def ensure_fpcalc():
+    """Point $FPCALC at the vendored binary when one shipped with the app.
+
+    Chromaprint's fpcalc is the #1 setup friction — vendoring it means a packaged
+    user never installs anything. An explicit $FPCALC always wins, and a source
+    checkout with fpcalc on PATH is unaffected. Returns the path used, or None.
+    """
+    if os.environ.get("FPCALC"):
+        return os.environ["FPCALC"]
+    name = "fpcalc.exe" if sys.platform == "win32" else "fpcalc"
+    candidate = resource_root() / name
+    if candidate.exists():
+        os.environ["FPCALC"] = str(candidate)
+        logger.debug("using vendored fpcalc: %s", candidate)
+        return str(candidate)
+    return None
+
+
 DATA_DIR = _data_dir()
 CONFIG_PATH = Path(os.environ.get("EARDITOR_CONFIG", DATA_DIR / "config.json"))
 DB_PATH = DATA_DIR / "earditor.db"

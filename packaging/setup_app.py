@@ -33,6 +33,18 @@ DATA_FILES = [
     ("", ["config.example.json"]),
 ]
 
+# Vendored fpcalc, so AcoustID works without `brew install chromaprint` — the #1
+# setup friction. config.ensure_fpcalc() points $FPCALC at it at startup. The build
+# workflow fetches it; without it we still build and AcoustID just stays disabled.
+# It is a Mach-O binary inside the bundle, so it must be signed along with the app
+# (the --deep sign in PACKAGING.md covers it).
+_FPCALC = ROOT / "packaging" / "vendor" / "fpcalc"
+if _FPCALC.exists():
+    DATA_FILES.append(("", [str(_FPCALC)]))
+else:
+    print("WARNING: packaging/vendor/fpcalc missing — building without AcoustID "
+          "fingerprinting. See PACKAGING.md.")
+
 OPTIONS = {
     "argv_emulation": False,
     "iconfile": "packaging/assets/Earditor.icns",

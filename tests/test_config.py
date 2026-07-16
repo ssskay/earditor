@@ -94,6 +94,62 @@ class DataLocationTest(TestCase):
         self.assertEqual(loaded.playlist_name, "Earditor — Tagged")
 
 
+class ResourceRootTest(TestCase):
+    def test_resourcepath_env_wins_for_py2app(self):
+        with mock.patch.dict(os.environ, {"RESOURCEPATH": "/bundle/Resources"}):
+            self.assertEqual(config.resource_root(), Path("/bundle/Resources"))
+
+    def test_meipass_is_used_for_pyinstaller(self):
+        env = {k: v for k, v in os.environ.items() if k != "RESOURCEPATH"}
+        with (
+            mock.patch.dict(os.environ, env, clear=True),
+            mock.patch.object(config.sys, "_MEIPASS", "/tmp/_MEI123", create=True),
+        ):
+            self.assertEqual(config.resource_root(), Path("/tmp/_MEI123"))
+
+    def test_source_checkout_uses_the_source_dir(self):
+        env = {k: v for k, v in os.environ.items() if k != "RESOURCEPATH"}
+        with mock.patch.dict(os.environ, env, clear=True):
+            self.assertEqual(config.resource_root(), config.SOURCE_DIR)
+
+
+class EnsureFpcalcTest(TestCase):
+    def test_explicit_fpcalc_env_is_never_overridden(self):
+        with mock.patch.dict(os.environ, {"FPCALC": "/usr/local/bin/fpcalc"}):
+            self.assertEqual(config.ensure_fpcalc(), "/usr/local/bin/fpcalc")
+
+    def test_vendored_binary_is_found_and_exported(self):
+        env = {k: v for k, v in os.environ.items() if k != "FPCALC"}
+        with TemporaryDirectory() as td:
+            vendored = Path(td) / "fpcalc"
+            vendored.write_bytes(b"#!/bin/sh\n")
+            with (
+                mock.patch.dict(os.environ, env, clear=True),
+                mock.patch.object(config.sys, "platform", "darwin"),
+                mock.patch.object(config, "resource_root", lambda: Path(td)),
+            ):
+                self.assertEqual(config.ensure_fpcalc(), str(vendored))
+                self.assertEqual(os.environ["FPCALC"], str(vendored))
+
+    def test_windows_looks_for_the_exe(self):
+        env = {k: v for k, v in os.environ.items() if k != "FPCALC"}
+        with TemporaryDirectory() as td:
+            (Path(td) / "fpcalc.exe").write_bytes(b"MZ")
+            with (
+                mock.patch.dict(os.environ, env, clear=True),
+                mock.patch.object(config.sys, "platform", "win32"),
+                mock.patch.object(config, "resource_root", lambda: Path(td)),
+            ):
+                self.assertEqual(config.ensure_fpcalc(), str(Path(td) / "fpcalc.exe"))
+
+    def test_missing_binary_degrades_to_none_rather_than_raising(self):
+        env = {k: v for k, v in os.environ.items() if k != "FPCALC"}
+        with TemporaryDirectory() as td, mock.patch.dict(os.environ, env, clear=True), \
+             mock.patch.object(config, "resource_root", lambda: Path(td)):
+            self.assertIsNone(config.ensure_fpcalc())
+            self.assertNotIn("FPCALC", os.environ)
+
+
 class MusicAppIntegrationTest(TestCase):
     """The platform check must win over config.json, in both directions."""
 
